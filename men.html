@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Men | StyleiT</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<base target="_blank">
 </head>
 <body>
 
@@ -13,6 +17,7 @@
     <a href="index.html" class="logo">STYLEIT</a>
     <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
+        <li><a href="men.html">Men</a></li>
     </ul>
     <div class="hamburger">
         <span></span>
@@ -30,44 +35,73 @@
     </div>
 </section>
 
-<!-- ✅ NEW BUTTON SECTION (correct placement) -->
-<section class="page-header">
-    <h1>Men</h1>
-
-    <div class="shop-action-buttons">
-        <button class="shop-btn" onclick="window.location.href='#full-outfits'">
-            Full Outfits
-        </button>
-        <button class="shop-btn" onclick="window.location.href='#specific-items'">
-            Specific Items
-        </button>
+<!-- SHOP CHOICE SECTION -->
+<section class="shop-choice-section">
+    <div class="shop-choice-header">
+        <span class="section-label">Browse</span>
+        <h2>How would you like to shop?</h2>
     </div>
-</section>
 
-<!-- ITEMS GRID -->
-<section class="items-grid">
-    <div class="item-card reveal">
-        <img src="https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600">
-        <div class="item-info">
-            <h3>Tailored Overcoat</h3>
-        </div>
+    <div class="shop-choice-grid">
+        <a href="men-full-outfits.html" class="shop-choice-card">
+            <div class="shop-choice-image" style="background-image: url('https://images.unsplash.com/photo-1617137968427-85924c800a22?w=800');"></div>
+            <div class="shop-choice-overlay"></div>
+            <div class="shop-choice-content">
+                <h3>Full Outfits</h3>
+                <div class="category-line"></div>
+                <p>Complete styled looks curated by our designers</p>
+                <span class="shop-choice-cta">Explore Styles &rarr;</span>
+            </div>
+        </a>
+
+        <a href="men-individual-pieces.html" class="shop-choice-card">
+            <div class="shop-choice-image" style="background-image: url('https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800');"></div>
+            <div class="shop-choice-overlay"></div>
+            <div class="shop-choice-content">
+                <h3>Individual Pieces</h3>
+                <div class="category-line"></div>
+                <p>Build your wardrobe one piece at a time</p>
+                <span class="shop-choice-cta">Browse Categories &rarr;</span>
+            </div>
+        </a>
     </div>
-</section>
-
-<!-- PLACEHOLDER SECTIONS -->
-<section id="full-outfits" class="shop-collection-section">
-    <h2>Full Outfits</h2>
-    <p>Complete styled looks coming soon.</p>
-</section>
-
-<section id="specific-items" class="shop-collection-section">
-    <h2>Specific Items</h2>
-    <p>Browse categories like shoes, shirts, etc.</p>
 </section>
 
 <!-- FOOTER -->
 <footer class="footer">
-    <p>&copy; 2024 StyleiT</p>
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <h3>STYLEIT</h3>
+            <p>Redefining modern fashion with timeless elegance and contemporary design. Every piece tells a story.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Shop</h4>
+            <ul>
+                <li><a href="men.html">Men</a></li>
+                <li><a href="women.html">Women</a></li>
+                <li><a href="kids.html">Kids</a></li>
+                <li><a href="brands.html">Brands</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Company</h4>
+            <ul>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Connect</h4>
+            <ul>
+                <li><a href="#">Instagram</a></li>
+                <li><a href="#">Pinterest</a></li>
+                <li><a href="#">LinkedIn</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; 2024 StyleiT. All rights reserved. Designed with intention.</p>
+    </div>
 </footer>
 
 <script src="script.js"></script>

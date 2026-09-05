@@ -784,3 +784,231 @@ h1, h2, h3, h4 {
         text-align: center;
     }
 }
+
+/* ============================================
+   MEN PAGE - SHOP CHOICE SECTION
+   ============================================ */
+.shop-choice-section {
+    padding: 6rem 5%;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.shop-choice-header {
+    margin-bottom: 4rem;
+}
+
+.shop-choice-header h2 {
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    margin-top: 0.5rem;
+}
+
+.shop-choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.shop-choice-card {
+    position: relative;
+    height: 500px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: var(--white);
+    border-radius: 2px;
+}
+
+.shop-choice-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: var(--transition);
+}
+
+.shop-choice-card:hover .shop-choice-image {
+    transform: scale(1.08);
+}
+
+.shop-choice-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    transition: var(--transition);
+    z-index: 1;
+}
+
+.shop-choice-card:hover .shop-choice-overlay {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.shop-choice-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 2rem;
+    max-width: 400px;
+}
+
+.shop-choice-content h3 {
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.shop-choice-content .category-line {
+    width: 50px;
+    height: 1px;
+    background: var(--accent);
+    margin: 0 auto 1.5rem;
+    transition: var(--transition);
+}
+
+.shop-choice-card:hover .category-line {
+    width: 80px;
+}
+
+.shop-choice-content p {
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.shop-choice-cta {
+    display: inline-block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 5px;
+    color: var(--accent);
+    transition: var(--transition);
+}
+
+.shop-choice-card:hover .shop-choice-cta {
+    color: var(--white);
+    border-color: var(--white);
+}
+
+/* ============================================
+   FULL OUTFITS & INDIVIDUAL PIECES - STYLE GRID
+   ============================================ */
+.style-grid-section {
+    padding: 5rem 5%;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.style-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.style-card {
+    position: relative;
+    height: 380px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    text-decoration: none;
+    color: var(--white);
+    border-radius: 2px;
+}
+
+.style-card-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: var(--transition);
+}
+
+.style-card:hover .style-card-image {
+    transform: scale(1.08);
+}
+
+.style-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.1) 100%);
+    transition: var(--transition);
+    z-index: 1;
+}
+
+.style-card:hover .style-card-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.05) 100%);
+}
+
+.style-card-content {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+    width: 100%;
+}
+
+.style-card-content h3 {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    transition: var(--transition);
+}
+
+.style-card:hover .style-card-content h3 {
+    transform: translateY(-3px);
+}
+
+.style-card-content p {
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    opacity: 0.8;
+    line-height: 1.5;
+}
+
+/* ============================================
+   RESPONSIVE - NEW SECTIONS
+   ============================================ */
+@media (max-width: 1024px) {
+    .style-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .shop-choice-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-choice-card {
+        height: 350px;
+    }
+
+    .style-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .style-card {
+        height: 300px;
+    }
+}

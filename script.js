@@ -80,6 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ============================================
 // SHOPPING CART (paste at the BOTTOM of script.js)
+// NOTE: if you pasted the previous cart code, delete that
+// old block first (from its header comment to the end of file)
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -88,6 +90,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const CART_KEY = 'styleit_cart';
     let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+
+    // Labels for each piece of the set (used in the cart display)
+    const PIECE_LABELS = { top: 'Top', jogger: 'Jogger', shoe: 'Shoe' };
 
     // ---- Inject cart drawer + overlay into the page ----
     document.body.insertAdjacentHTML('beforeend', `
@@ -124,6 +129,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'R' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
+    // Turn { top: 'M', jogger: 'L', shoe: '9' } into a display string
+    function formatSizes(item) {
+        if (item.sizes) {
+            return Object.entries(item.sizes)
+                .map(([piece, size]) => PIECE_LABELS[piece] + ' ' + size)
+                .join(' &middot; ');
+        }
+        return item.size || ''; // old cart items (backwards compatible)
+    }
+
     function renderCart() {
         // Badge count
         const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -140,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="cart-item">
                     <div class="cart-item-info">
                         <h4>${item.name}</h4>
-                        <p>Size: ${item.size} &nbsp;&middot;&nbsp; Qty: ${item.qty}</p>
+                        <p>${formatSizes(item)} &nbsp;&middot;&nbsp; Qty: ${item.qty}</p>
                     </div>
                     <div class="cart-item-right">
                         <p class="cart-item-price">${formatRand(item.price * item.qty)}</p>
@@ -156,8 +171,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.addToCart = function(product) {
-        // Same product + same size? Increase quantity instead of adding a new line
-        const existing = cart.find(item => item.id === product.id && item.size === product.size);
+        // Same product + same sizes for all pieces? Increase quantity instead of a new line
+        const existing = cart.find(item =>
+            item.id === product.id &&
+            JSON.stringify(item.sizes || null) === JSON.stringify(product.sizes || null)
+        );
         if (existing) {
             existing.qty += product.qty;
         } else {
@@ -205,12 +223,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     renderCart();
 
-    // ---- Product page: size + quantity + add to cart ----
-    const sizeButtons = document.querySelectorAll('.size-btn');
-    sizeButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            sizeButtons.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
+    // ---- Product page: size groups + quantity + add to cart ----
+
+    // Each size group selects independently (one size per piece)
+    document.querySelectorAll('.size-group').forEach(group => {
+        group.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                group.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
         });
     });
 
@@ -227,18 +248,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
-            const selectedSize = document.querySelector('.size-btn.selected');
-            if (!selectedSize) {
-                alert('Please select a size first.');
+            // Collect the chosen size from EACH piece group
+            const sizes = {};
+            let missing = null;
+            document.querySelectorAll('.size-group').forEach(group => {
+                const selected = group.querySelector('.size-btn.selected');
+                if (selected) {
+                    sizes[group.dataset.piece] = selected.dataset.size;
+                } else if (!missing) {
+                    missing = group.dataset.piece;
+                }
+            });
+
+            if (missing) {
+                const labels = { top: 'Boxy top', jogger: 'Black wide leg graphic jogger', shoe: 'Chunky lace up skater sneaker' };
+                alert('Please select a size for: ' + labels[missing]);
                 return;
             }
+
             addToCart({
                 id: 'streetwear-set-1',
                 name: 'Boxy Top Streetwear Set',
                 price: 1050,
-                size: selectedSize.dataset.size,
+                sizes: sizes,      // e.g. { top: 'M', jogger: 'L', shoe: '9' }
                 qty: parseInt(qtyInput.value)
             });
+
             addBtn.textContent = 'Added to Cart \u2713';
             addBtn.classList.add('added');
             setTimeout(() => {

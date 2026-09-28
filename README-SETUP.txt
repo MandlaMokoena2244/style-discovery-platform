@@ -38,3 +38,36 @@ ADDING MORE PRODUCTS LATER
 - Duplicate the product card block in men-streetwear.html (change href, img src, name, price)
 - Duplicate product-streetwear-set.html for the new detail page
 - In js-to-add.js, the addToCart product object uses a unique 'id' per product
+
+Another commit
+STYLEIT - STREETWEAR PRODUCT + CART SETUP (v2 - three size selectors)
+====================================================================
+
+WHAT CHANGED IN v2
+------------------
+The product page now has THREE independent size selectors (one per piece):
+  Piece 1 - Boxy top ................... S, M, L, XL, XXL
+  Piece 2 - Black wide leg jogger ...... S, M, L, XL, XXL
+  Piece 3 - Chunky lace up skater sneaker  UK 6, 7, 8, 9, 10
+All three sizes must be chosen before Add to Cart works (it tells
+you which piece is missing). The cart stores all three sizes per item
+and shows them in the drawer, e.g. "Top M - Jogger L - Shoe 9".
+
+STEPS IN VS CODE (only 2 files change)
+--------------------------------------
+1. REPLACE your product-streetwear-set.html with the new version
+2. In script.js: DELETE the old cart block you pasted previously
+   (it starts with the comment "SHOPPING CART (paste at the BOTTOM")
+   all the way to the end of the file, then PASTE the new js-to-add.js
+   content at the bottom instead.
+
+No CSS changes needed - the new size groups reuse the existing styles.
+
+NOTE: if you still see the old single "Select size" section after
+updating, hard-refresh the browser (Ctrl+Shift+R / Cmd+Shift+R).
+
+OTHER FILES (unchanged from v1 - keep as they are)
+--------------------------------------------------
+- men-full-outfits.html (Streetwear card link)
+- men-streetwear.html (listing page)
+- css-to-add.css contents pasted at bottom of styles.css

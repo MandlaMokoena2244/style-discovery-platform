@@ -1,4 +1,4 @@
-STYLEIT - STREETWEAR PRODUCT + CART SETUP
+FashForge - STREETWEAR PRODUCT + CART SETUP
 ==========================================
 
 FILES IN THIS FOLDER
@@ -30,7 +30,7 @@ WHAT YOU GET
   quantity selector, Add to Cart button
 - Working cart: cart icon in the navbar with item counter, slide-out cart
   drawer showing items/size/quantity, remove buttons, running total,
-  and a demo checkout button. Cart is saved in the browser (localStorage),
+  and an Order on WhatsApp button. Cart is saved in the browser (localStorage),
   so it survives page refreshes.
 
 ADDING MORE PRODUCTS LATER
@@ -40,7 +40,7 @@ ADDING MORE PRODUCTS LATER
 - In js-to-add.js, the addToCart product object uses a unique 'id' per product
 
 Another commit
-STYLEIT - STREETWEAR PRODUCT + CART SETUP (v2 - three size selectors)
+FashForge - STREETWEAR PRODUCT + CART SETUP (v2 - three size selectors)
 ====================================================================
 
 WHAT CHANGED IN v2

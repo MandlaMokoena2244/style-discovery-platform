@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Allow pop-ups to open WhatsApp and send your message.');
                 return;
             }
-            opened.opener = null;
+            try { opened.opener = null; } catch (err) { /* already opened */ }
             this.reset();
         });
     }
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Allow pop-ups to open WhatsApp and place your order.');
             return;
         }
-        opened.opener = null;
+        try { opened.opener = null; } catch (err) { /* already opened */ }
         cart = [];
         saveCart();
         renderCart();

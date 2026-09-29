@@ -390,7 +390,8 @@ h1, h2, h3, h4 {
     margin-bottom: 1.5rem;
 }
 
-.brand-card a {
+.brand-card a,
+.brand-card > span {
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -1383,6 +1384,63 @@ h1, h2, h3, h4 {
 @media (max-width: 768px) {
     .cart-btn { margin-left: 0; }
     .cart-btn svg { stroke: var(--primary); }
+}
+
+/* Unavailable tiles stay visible, but they are not links. */
+.coming-soon {
+    position: relative;
+    cursor: default;
+}
+.coming-soon::after {
+    content: 'Coming soon';
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 3;
+    background: var(--accent);
+    color: var(--white);
+    padding: 0.4rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    line-height: 1.2;
+    pointer-events: none;
+}
+.coming-soon:hover .style-card-image,
+.coming-soon:hover img,
+.coming-soon:hover .style-card-content h3 {
+    transform: none;
+}
+.coming-soon:hover .style-card-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.1) 100%);
+}
+.brand-card.coming-soon {
+    position: relative;
+}
+.brand-card.coming-soon:hover {
+    border-color: #eee;
+    transform: none;
+    box-shadow: none;
+}
+.brand-card.coming-soon > span {
+    cursor: default;
+    color: inherit;
+}
+.drops-note {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 0;
+    text-align: center;
+    color: var(--text-dark);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+.drops-note a {
+    color: inherit;
+    border-bottom: 1px solid var(--accent);
 }
 
 /* Keep every page inside a 390px-wide viewport */

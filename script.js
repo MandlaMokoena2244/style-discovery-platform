@@ -110,6 +110,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const CART_KEY = 'fashforge_cart';
     let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
 
+    // Outfit ID format: FF-<M|W|K>-<NNN> (M men, W women, K kids), e.g. FF-M-001.
+    // Set data-outfit-id on the product's Add to Cart button. The next free number
+    // in that department is the next ID (FF-M-002, FF-W-001, FF-K-001, ...).
+    // Brand product URLs and supplier details stay in a private Google Sheet keyed
+    // by this ID — do not put them in the site. Cart lines with no outfit id
+    // (or an older non-FF id) still check out; the id is left off that line.
+    const OUTFIT_ID_RE = /^FF-[MWK]-\d{3}$/;
+
     // Labels for each piece of the set (used in the cart display)
     const PIECE_LABELS = { top: 'Top', jogger: 'Jogger', shoe: 'Shoe' };
 
@@ -158,11 +166,32 @@ document.addEventListener('DOMContentLoaded', function() {
         return item.size || ''; // old cart items (backwards compatible)
     }
 
+    function outfitIdOf(item) {
+        if (!item || typeof item.id !== 'string') return '';
+        return OUTFIT_ID_RE.test(item.id) ? item.id : '';
+    }
+
     function orderLine(item) {
         const label = item.brand ? (item.brand + ' — ' + item.name) : item.name;
         const sizes = formatSizes(item, true);
         const sizePart = sizes ? ' (' + sizes + ')' : '';
-        return label + sizePart + ' — Qty: ' + item.qty + ' — ' + formatRand(item.price * item.qty);
+        const id = outfitIdOf(item);
+        const prefix = id ? (id + ' — ') : '';
+        return prefix + label + sizePart + ' — Qty: ' + item.qty + ' — ' + formatRand(item.price * item.qty);
+    }
+
+    // One reference per checkout, e.g. Order ref: FF-20260929-K7QM
+    function makeOrderRef() {
+        const now = new Date();
+        const date = String(now.getFullYear())
+            + String(now.getMonth() + 1).padStart(2, '0')
+            + String(now.getDate()).padStart(2, '0');
+        const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 4; i++) {
+            code += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+        }
+        return 'FF-' + date + '-' + code;
     }
 
     function renderCart() {
@@ -242,6 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
         const message = "Hi FashForge, I'd like to order:\n" +
+            'Order ref: ' + makeOrderRef() + '\n' +
             cart.map(orderLine).join('\n') +
             '\nTotal: ' + formatRand(total);
         const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
@@ -303,14 +333,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            addToCart({
-                id: 'streetwear-set-1',
+            const outfitId = (addBtn.getAttribute('data-outfit-id') || '').trim();
+            const product = {
                 name: 'Boxy Top Streetwear Set',
                 brand: 'THE FIX',
                 price: 1050,
                 sizes: sizes,      // e.g. { top: 'M', jogger: 'L', shoe: '9' }
                 qty: parseInt(qtyInput.value)
-            });
+            };
+            // Only store a real outfit ID. Missing or legacy ids must not block checkout.
+            if (OUTFIT_ID_RE.test(outfitId)) product.id = outfitId;
+            addToCart(product);
 
             addBtn.textContent = 'Added to Cart \u2713';
             addBtn.classList.add('added');

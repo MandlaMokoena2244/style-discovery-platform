@@ -1,5 +1,5 @@
 /* ============================================
-   STYLEIT - Fashion Brand Website
+   FashForge - Fashion Brand Website
    Updated Stylesheet
    ============================================ */
 
@@ -229,6 +229,18 @@ h1, h2, h3, h4 {
     letter-spacing: 4px;
     opacity: 0.8;
 }
+.home-instagram {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: var(--white);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 3px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+}
+.home-instagram:hover { color: var(--accent); }
 
 /* ============================================
    CATEGORY PAGES (MEN, WOMEN, KIDS, BRANDS)
@@ -533,6 +545,18 @@ h1, h2, h3, h4 {
 .contact-detail p {
     color: var(--text-light);
 }
+.contact-detail a,
+.about-text a {
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--accent);
+}
+.instagram-follow-link {
+    display: inline-block;
+    width: auto;
+    max-width: 100%;
+    padding: 1rem 1.5rem;
+    line-height: 1.4;
+}
 .contact-form {
     background: var(--secondary);
     padding: 3rem;
@@ -684,6 +708,22 @@ h1, h2, h3, h4 {
     }
     .category-square {
         min-height: 25vh;
+    }
+    /* Keep the home title in its own bar so it does not cover the MEN label */
+    .home-brand {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        padding: 1.25rem 1rem 0.85rem;
+        background: var(--primary);
+        box-sizing: border-box;
+    }
+    .home-brand h1 {
+        font-size: 1.7rem;
+        letter-spacing: 0.22em;
     }
     .nav-links {
         position: fixed;
@@ -1225,17 +1265,18 @@ h1, h2, h3, h4 {
 .cart-drawer {
     position: fixed;
     top: 0;
-    right: -420px;
+    right: 0;
     width: 400px;
     max-width: 90vw;
     height: 100vh;
     background: var(--white);
     z-index: 1600;
-    transition: right 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     display: flex;
     flex-direction: column;
 }
-.cart-drawer.open { right: 0; }
+.cart-drawer.open { transform: translateX(0); }
 .cart-drawer-header {
     display: flex;
     justify-content: space-between;
@@ -1342,4 +1383,40 @@ h1, h2, h3, h4 {
 @media (max-width: 768px) {
     .cart-btn { margin-left: 0; }
     .cart-btn svg { stroke: var(--primary); }
+}
+
+/* Keep every page inside a 390px-wide viewport */
+@media (max-width: 480px) {
+    .category-hero-content,
+    .page-hero-content {
+        padding: 0 1.25rem;
+        max-width: 100%;
+    }
+    .category-hero-content h1 {
+        font-size: 2.1rem;
+        letter-spacing: 0.06em;
+    }
+    .page-hero-content h1 {
+        font-size: 2.4rem;
+        letter-spacing: 0.08em;
+    }
+    .category-hero-content p {
+        letter-spacing: 0.12em;
+        font-size: 0.85rem;
+    }
+    .logo {
+        letter-spacing: 1px;
+        font-size: 1.25rem;
+    }
+    .contact-form {
+        padding: 1.5rem;
+    }
+    .btn-checkout,
+    .btn-add-cart,
+    .submit-btn {
+        letter-spacing: 1px;
+    }
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
 }

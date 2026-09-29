@@ -1,5 +1,5 @@
 // ============================================
-// STYLEIT - Main JavaScript
+// FashForge - Main JavaScript
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -66,12 +66,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Contact form demo
+    // Contact form -> WhatsApp (name + message, plus any subject/email the visitor typed)
     const contactForm = document.querySelector('.contact-form form');
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            alert('Thank you for your message!');
+            const name = (document.getElementById('name').value || '').trim();
+            const message = (document.getElementById('message').value || '').trim();
+            if (!name || !message) {
+                alert('Please add your name and a message.');
+                return;
+            }
+            const subject = (document.getElementById('subject').value || '').trim();
+            const email = (document.getElementById('email').value || '').trim();
+            let text = "Hi FashForge, my name is " + name + ".";
+            if (subject) text += "\nSubject: " + subject;
+            if (email) text += "\nEmail: " + email;
+            text += "\n\n" + message;
+            const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(text);
+            console.log('WhatsApp contact URL:', url);
+            const opened = window.open(url, '_blank');
+            if (!opened) {
+                alert('Allow pop-ups to open WhatsApp and send your message.');
+                return;
+            }
+            try { opened.opener = null; } catch (err) { /* already opened */ }
             this.reset();
         });
     }
@@ -88,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const cartBtn = document.getElementById('cart-btn');
     if (!cartBtn) return; // page has no cart button, do nothing
 
-    const CART_KEY = 'styleit_cart';
+    const CART_KEY = 'fashforge_cart';
     let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
 
     // Labels for each piece of the set (used in the cart display)
@@ -108,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
                 </div>
-                <button class="btn-checkout" id="checkout-btn">Checkout</button>
+                <button class="btn-checkout" id="checkout-btn">Order on WhatsApp</button>
             </div>
         </aside>
     `);
@@ -130,13 +149,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Turn { top: 'M', jogger: 'L', shoe: '9' } into a display string
-    function formatSizes(item) {
+    function formatSizes(item, plain) {
         if (item.sizes) {
-            return Object.entries(item.sizes)
-                .map(([piece, size]) => PIECE_LABELS[piece] + ' ' + size)
-                .join(' &middot; ');
+            const parts = Object.entries(item.sizes)
+                .map(([piece, size]) => (PIECE_LABELS[piece] || piece) + ' ' + size);
+            return plain ? parts.join(', ') : parts.join(' &middot; ');
         }
         return item.size || ''; // old cart items (backwards compatible)
+    }
+
+    function orderLine(item) {
+        const label = item.brand ? (item.brand + ' — ' + item.name) : item.name;
+        const sizes = formatSizes(item, true);
+        const sizePart = sizes ? ' (' + sizes + ')' : '';
+        return label + sizePart + ' — Qty: ' + item.qty + ' — ' + formatRand(item.price * item.qty);
     }
 
     function renderCart() {
@@ -154,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
             itemsEl.innerHTML = cart.map((item, i) => `
                 <div class="cart-item">
                     <div class="cart-item-info">
-                        <h4>${item.name}</h4>
+                        <h4>${item.brand ? item.brand + ' — ' + item.name : item.name}</h4>
                         <p>${formatSizes(item)} &nbsp;&middot;&nbsp; Qty: ${item.qty}</p>
                     </div>
                     <div class="cart-item-right">
@@ -208,13 +234,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Checkout (demo)
+    // Checkout -> WhatsApp order. Cart is cleared only after WhatsApp opens.
     checkoutBtn.addEventListener('click', function() {
         if (cart.length === 0) {
             alert('Your cart is empty.');
             return;
         }
-        alert('Thank you for your order! This is a demo checkout.');
+        const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+        const message = "Hi FashForge, I'd like to order:\n" +
+            cart.map(orderLine).join('\n') +
+            '\nTotal: ' + formatRand(total);
+        const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
+        console.log('WhatsApp checkout URL:', url);
+        const opened = window.open(url, '_blank');
+        if (!opened) {
+            alert('Allow pop-ups to open WhatsApp and place your order.');
+            return;
+        }
+        try { opened.opener = null; } catch (err) { /* already opened */ }
         cart = [];
         saveCart();
         renderCart();
@@ -269,6 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addToCart({
                 id: 'streetwear-set-1',
                 name: 'Boxy Top Streetwear Set',
+                brand: 'THE FIX',
                 price: 1050,
                 sizes: sizes,      // e.g. { top: 'M', jogger: 'L', shoe: '9' }
                 qty: parseInt(qtyInput.value)

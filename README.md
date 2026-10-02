@@ -9,7 +9,7 @@ Every real outfit has an ID in the form `FF-<M|W|K>-<3-digit number>`:
 - `W` — women
 - `K` — kids
 
-`FF-M-001` is the Boxy Top Streetwear Set by THE FIX. The ID lives on the product as `data-outfit-id` (on the Add to Cart button, and on the listing card). Adding that set to the cart stores the same `id` on the item in `localStorage` under `fashforge_cart`. WhatsApp checkout prints it on the line, for example:
+`FF-M-001` is the Boxy Top Streetwear Set styled by FashForge. Brand: THE FIX. The ID lives on the product as `data-outfit-id` (on the Add to Cart button, and on the listing card). Adding that set to the cart stores the same `id` on the item in `localStorage` under `fashforge_cart`. WhatsApp checkout prints it on the line, for example:
 
 `FF-M-001 — THE FIX — Boxy Top Streetwear Set (Top M, Jogger L, Shoe 9) — Qty: 2 — R2,100.00`
 

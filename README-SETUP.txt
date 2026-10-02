@@ -48,7 +48,7 @@ WHAT CHANGED IN v2
 The product page now has THREE independent size selectors (one per piece):
   Piece 1 - Boxy top ................... S, M, L, XL, XXL
   Piece 2 - Black wide leg jogger ...... S, M, L, XL, XXL
-  Piece 3 - Chunky lace up skater sneaker  UK 6, 7, 8, 9, 10
+  Piece 3 - Chunky lace up skater sneaker  UK 6, 7, 8, 9, 11
 All three sizes must be chosen before Add to Cart works (it tells
 you which piece is missing). The cart stores all three sizes per item
 and shows them in the drawer, e.g. "Top M - Jogger L - Shoe 9".

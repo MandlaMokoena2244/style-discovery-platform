@@ -22,3 +22,7 @@ Items already in a cart with no `id`, or with an older id that is not this forma
 1. Take the next free number for that department (`FF-M-002`, `FF-W-001`, `FF-K-001`, and so on).
 2. Put `data-outfit-id="FF-W-001"` on that product's Add to Cart button (and on its listing card).
 3. Leave brand product URLs, source links, and supplier details out of the site. Those stay in the private Google Sheet, keyed by the outfit ID.
+
+### Adding a product details block
+
+Copy the Product details section on `product-streetwear-set.html` (outfit `FF-M-001`) and place it below that page's size selectors and add-to-cart area. One card per piece: the piece name as a heading, then a `<dl>` of label/value rows (`<dt>` and `<dd>`, not a table). Reuse the `.product-details` rules in `styles.css`. Above 720px the cards sit side by side in a three-column grid; at 720px and below they stack in one column. Do not add retailer or brand links. This page has no WhatsApp link, so the sizing tip stays plain text. If a future product page already links to WhatsApp, point the words "WhatsApp" in that tip at the same link.

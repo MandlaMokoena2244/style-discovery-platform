@@ -1660,3 +1660,94 @@ h1, h2, h3, h4 {
         grid-template-columns: 1fr;
     }
 }
+
+/* Women's full-outfit photos are composites (model and piece breakdown).
+   Show the whole frame. Do not crop them the way a lifestyle tile is cropped. */
+.style-grid.four-up {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.style-card.photo-tile {
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    color: var(--text-dark);
+    background: var(--white);
+    border: 1px solid #eee;
+}
+.style-card.photo-tile .style-card-image {
+    position: relative;
+    width: 100%;
+    height: clamp(260px, 70vw, 460px);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #f3efe9;
+}
+.style-card.photo-tile .style-card-overlay {
+    display: none;
+}
+.style-card.photo-tile .style-card-content {
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+.style-card.photo-tile .style-card-content h3 {
+    color: var(--primary);
+}
+.style-card.photo-tile .style-card-content p {
+    color: var(--text-light);
+    opacity: 1;
+}
+.style-card.photo-tile:hover .style-card-image,
+.style-card.photo-tile:hover .style-card-content h3 {
+    transform: none;
+}
+.style-card.photo-tile:hover .style-card-content h3 {
+    color: var(--accent);
+}
+.item-card.outfit-card img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    background: #f3efe9;
+}
+.item-card.outfit-card:hover img {
+    transform: none;
+}
+.item-id {
+    margin-top: 0.35rem;
+    font-size: 0.75rem !important;
+    letter-spacing: 2px;
+    color: var(--text-light);
+}
+.item-info .item-brand.brand-long,
+.product-brand.brand-long {
+    letter-spacing: 0.12em !important;
+    line-height: 1.7;
+}
+.product-image-col.outfit-photo {
+    background: #f3efe9;
+}
+.product-image-col.outfit-photo img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+.outfit-id {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-light);
+    margin-bottom: 0.75rem;
+}
+.product-details-grid.pieces-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 768px) {
+    .style-grid.four-up {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 720px) {
+    .product-details-grid.pieces-2 {
+        grid-template-columns: 1fr;
+    }
+}

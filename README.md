@@ -86,15 +86,19 @@ Set these in Netlify (Site configuration, Environment variables). Do not commit 
 
 Paid orders are always written to the Netlify function log by `recordOrder`. If both Google variables are set, the same order is appended to a tab named `Orders`. If either variable is missing, or Sheets cannot be reached, the log is kept and the payment notification still succeeds. Columns: Order ref, Date, Status, Customer name, Email, Mobile, Address, Outfit IDs, Items with sizes, Total, PayFast payment id. The total is ZAR, for example `1050.00`. Share the sheet with the service account email as an editor, and turn on the Google Sheets API.
 
-PayFast publishes this sandbox example. It is not the FashForge account. Use your own sandbox merchant so payment notifications reach your site:
+PayFast publishes these sandbox examples. They are not the FashForge account. Use your own sandbox merchant so payment notifications reach your site.
+
+Sandbox merchant with a passphrase (this is the one that accepts a signature):
 
 ```
 PAYFAST_MODE=sandbox
-PAYFAST_MERCHANT_ID=10000100
-PAYFAST_MERCHANT_KEY=46f0cd694581a
-PAYFAST_PASSPHRASE=jt7NOE43FZPn
+PAYFAST_MERCHANT_ID=10004002
+PAYFAST_MERCHANT_KEY=q1cd2rdny4a53
+PAYFAST_PASSPHRASE=payfast
 SITE_URL=https://fashforge.co.za
 ```
+
+Older docs also show merchant `10000100` / key `46f0cd694581a` with passphrase `jt7NOE43FZPn`. A signature built with that passphrase is currently rejected by the sandbox. Prefer `10004002` or your own sandbox merchant.
 
 ### Owner checklist
 

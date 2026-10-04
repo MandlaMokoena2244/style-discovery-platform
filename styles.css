@@ -1514,6 +1514,117 @@ h1, h2, h3, h4 {
     border-bottom: 1px solid var(--accent);
 }
 
+/* Individual pieces: studio shots sit on a light grey field and stay fully visible. */
+.pieces-intro {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 3rem 5% 0;
+}
+.pieces-intro h2 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+}
+.pieces-intro p {
+    margin-top: 0.65rem;
+    max-width: 38rem;
+    color: var(--text-light);
+    line-height: 1.7;
+}
+.style-grid-section .pieces-intro {
+    max-width: none;
+    padding: 0 0 1.75rem;
+}
+.items-grid.piece-grid {
+    padding-top: 1.75rem;
+}
+.item-card.piece-card .piece-frame {
+    height: 400px;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.item-card.piece-card .piece-frame img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.item-card.piece-card.sneaker-card .piece-frame img {
+    max-width: min(100%, 500px);
+}
+.item-card.piece-card:hover img {
+    transform: none;
+}
+.product-image-col.piece-photo {
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.product-image-col.piece-photo img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 680px;
+    object-fit: contain;
+    margin-inline: auto;
+}
+.product-image-col.piece-photo.is-sneaker img {
+    max-width: min(100%, 500px);
+}
+.set-save {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+.detail-card-photo {
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.15rem;
+    min-height: 200px;
+}
+.detail-card-photo img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+}
+.product-details-grid:has(> :only-child) {
+    grid-template-columns: minmax(0, 32rem);
+}
+.detail-card-photo.is-sneaker img {
+    max-width: min(100%, 500px);
+}
+.detail-card-price {
+    margin: -0.35rem 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+.detail-card-buy {
+    display: inline-block;
+    margin-top: 1.15rem;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 3px;
+}
+.piece-set-link {
+    display: inline-block;
+    margin-top: 0.85rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 2px;
+}
+
 /* Keep every page inside a 390px-wide viewport */
 @media (max-width: 480px) {
     .category-hero-content,

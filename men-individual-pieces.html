@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Individual men's pieces styled by FashForge from South African brands.">
+    <meta name="description" content="Individual men's pieces styled by FashForge, including the Boxy Top, jogger, and sneaker from THE FIX.">
     <meta property="og:title" content="Men - Individual Pieces | FashForge">
-    <meta property="og:description" content="Individual men's pieces styled by FashForge from South African brands.">
+    <meta property="og:description" content="Individual men's pieces styled by FashForge, including the Boxy Top, jogger, and sneaker from THE FIX.">
     <meta property="og:url" content="https://fashforge.co.za/men-individual-pieces.html">
     <meta property="og:type" content="website">
     <link rel="canonical" href="https://fashforge.co.za/men-individual-pieces.html">
@@ -25,6 +25,14 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="men.html">Men</a></li>
     </ul>
+    <button class="cart-btn" id="cart-btn" aria-label="Open cart">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+    </button>
     <div class="hamburger">
         <span></span>
         <span></span>
@@ -43,8 +51,53 @@
 
 <p class="drops-note">New drops every week — follow us on Instagram <a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">@fashforge_official_account</a></p>
 
+<section class="pieces-intro">
+    <span class="section-label">Available now</span>
+    <h2>Pieces from the Boxy Top Streetwear Set</h2>
+    <p>Buy the boxy top, jogger, or sneaker on its own. The full outfit is still R1,050.00.</p>
+</section>
+
+<section class="items-grid piece-grid" aria-label="Individual pieces">
+    <a href="product-boxy-top.html" class="item-card piece-card reveal">
+        <div class="piece-frame">
+            <img src="images/piece-boxy-top.jpg" alt="Black sleeveless boxy top">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: THE FIX</p>
+            <h3>Boxy Top</h3>
+            <p class="item-price">R250.00</p>
+        </div>
+    </a>
+
+    <a href="product-graphic-jogger.html" class="item-card piece-card reveal">
+        <div class="piece-frame">
+            <img src="images/piece-jogger.jpg" alt="Black wide leg jogger with Highly Favoured graphic">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: THE FIX</p>
+            <h3>Black Wide Leg Graphic Jogger</h3>
+            <p class="item-price">R500.00</p>
+        </div>
+    </a>
+
+    <a href="product-skater-sneaker.html" class="item-card piece-card sneaker-card reveal">
+        <div class="piece-frame">
+            <img src="images/piece-sneaker.jpg" alt="Black chunky lace up skater sneaker">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: THE FIX</p>
+            <h3>Chunky Lace Up Skater Sneaker</h3>
+            <p class="item-price">R400.00</p>
+        </div>
+    </a>
+</section>
+
 <!-- CATEGORY OPTIONS GRID -->
 <section class="style-grid-section">
+    <div class="pieces-intro">
+        <span class="section-label">More categories</span>
+        <h2>Still to come</h2>
+    </div>
     <div class="style-grid">
         <div class="style-card reveal coming-soon" aria-disabled="true">
             <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800');"></div>

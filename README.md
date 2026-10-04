@@ -13,6 +13,8 @@ Every real outfit has an ID in the form `FF-<M|W|K>-<3-digit number>`:
 
 `FF-M-001 — THE FIX — Boxy Top Streetwear Set (Top M, Jogger L, Shoe 9) — Qty: 2 — R2,100.00`
 
+The same three pieces are also sold on their own from Men, Individual Pieces. Piece prices are Boxy Top R250.00, Black Wide Leg Graphic Jogger R500.00, and Chunky Lace Up Skater Sneaker R400.00. The full set stays R1,050.00. A piece added on its own uses that piece price in the cart total and in the WhatsApp order line. Those lines do not use a separate outfit ID.
+
 Each checkout also adds one order reference, `Order ref: FF-` plus the date (`YYYYMMDD`) and a short random code, for example `Order ref: FF-20260929-K7QM`.
 
 Items already in a cart with no `id`, or with an older id that is not this format, still check out. Those lines are sent without an outfit ID.

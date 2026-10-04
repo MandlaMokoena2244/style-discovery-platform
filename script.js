@@ -102,6 +102,26 @@ document.addEventListener('DOMContentLoaded', function() {
 // NOTE: if you pasted the previous cart code, delete that
 // old block first (from its header comment to the end of file)
 // ============================================
+
+// ============================================
+// PAYMENT SWITCH
+// One place to turn card payments on.
+// 'whatsapp' keeps Order on WhatsApp. This is the safe default until
+// the live PayFast account is verified.
+// 'payfast' replaces that button with the card checkout form.
+// There is no WhatsApp order button while this is 'payfast'.
+// The contact form still uses WhatsApp either way.
+// ============================================
+const PAYMENT_PROVIDER = 'whatsapp';
+
+function activePaymentProvider() {
+    if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
+    if (PAYMENT_PROVIDER !== 'whatsapp') {
+        console.warn('PAYMENT_PROVIDER must be whatsapp or payfast. Staying on WhatsApp.');
+    }
+    return 'whatsapp';
+}
+
 // In-stock sizes only, keyed by piece id. checkedOn is the date the brand
 // pages were last checked. Edit this list; every size group with that
 // data-piece-id updates. Do not add sold-out sizes or brand prices here.
@@ -152,7 +172,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sizeGroups.length && !document.querySelector('.size-check-note')) {
         const note = document.createElement('p');
         note.className = 'size-check-note';
-        note.textContent = 'Sizes checked on ' + PIECE_STOCK.checkedOn + '. We confirm stock with you on WhatsApp before you pay.';
+        note.textContent = activePaymentProvider() === 'payfast'
+            ? 'Sizes checked on ' + PIECE_STOCK.checkedOn + '. Message us on WhatsApp if you are unsure of a size.'
+            : 'Sizes checked on ' + PIECE_STOCK.checkedOn + '. We confirm stock with you on WhatsApp before you pay.';
         sizeGroups[sizeGroups.length - 1].insertAdjacentElement('afterend', note);
     }
 
@@ -183,21 +205,86 @@ document.addEventListener('DOMContentLoaded', function() {
         jeans: 'Jeans'
     };
 
+    const payfastOn = activePaymentProvider() === 'payfast';
+
+    function checkoutFormHtml() {
+        const provinces = [
+            'Eastern Cape',
+            'Free State',
+            'Gauteng',
+            'KwaZulu-Natal',
+            'Limpopo',
+            'Mpumalanga',
+            'Northern Cape',
+            'North West',
+            'Western Cape'
+        ];
+        const options = '<option value="">Select a province</option>' + provinces.map(function(name) {
+            return '<option value="' + name + '">' + name + '</option>';
+        }).join('');
+        return `
+            <form id="checkout-form" class="checkout-form" novalidate>
+                <h4>Delivery details</h4>
+                <div class="form-group">
+                    <label for="checkout-name">Full name</label>
+                    <input id="checkout-name" name="name" type="text" autocomplete="name" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-email">Email</label>
+                    <input id="checkout-email" name="email" type="email" autocomplete="email" maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-mobile">Mobile number</label>
+                    <input id="checkout-mobile" name="mobile" type="tel" autocomplete="tel" inputmode="tel" placeholder="082 000 0000" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-street">Street address</label>
+                    <input id="checkout-street" name="street" type="text" autocomplete="address-line1" maxlength="120" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-suburb">Suburb</label>
+                    <input id="checkout-suburb" name="suburb" type="text" autocomplete="address-line2" maxlength="80" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-city">City</label>
+                    <input id="checkout-city" name="city" type="text" autocomplete="address-level2" maxlength="60" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-province">Province</label>
+                    <select id="checkout-province" name="province" autocomplete="address-level1" required>${options}</select>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-postal">Postal code</label>
+                    <input id="checkout-postal" name="postalCode" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="4" required>
+                </div>
+                <div class="form-group">
+                    <label for="checkout-note">Delivery note (optional)</label>
+                    <textarea id="checkout-note" name="note" maxlength="200"></textarea>
+                </div>
+            </form>
+        `;
+    }
+
     // ---- Inject cart drawer + overlay into the page ----
     document.body.insertAdjacentHTML('beforeend', `
         <div class="cart-overlay" id="cart-overlay"></div>
-        <aside class="cart-drawer" id="cart-drawer">
+        <aside class="cart-drawer${payfastOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${payfastOn ? 'payfast' : 'whatsapp'}">
             <div class="cart-drawer-header">
                 <h3>Your Cart</h3>
                 <button class="cart-close" id="cart-close" aria-label="Close cart">&times;</button>
             </div>
-            <div class="cart-items" id="cart-items"></div>
+            <div class="cart-drawer-body">
+                <div class="cart-items" id="cart-items"></div>
+                ${payfastOn ? checkoutFormHtml() : ''}
+            </div>
             <div class="cart-drawer-footer">
+                ${payfastOn ? '<p class="cart-delivery-note">Free delivery on orders over R4,000.</p>' : ''}
                 <div class="cart-total-row">
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
                 </div>
-                <button class="btn-checkout" id="checkout-btn">Order on WhatsApp</button>
+                <button class="btn-checkout" id="checkout-btn" type="${payfastOn ? 'submit' : 'button'}"${payfastOn ? ' form="checkout-form"' : ''}>${payfastOn ? 'Pay by card' : 'Order on WhatsApp'}</button>
+                ${payfastOn ? '<p class="checkout-error" id="checkout-error" role="alert" hidden></p>' : ''}
             </div>
         </aside>
     `);
@@ -323,8 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Checkout -> WhatsApp order. Cart is cleared only after WhatsApp opens.
-    checkoutBtn.addEventListener('click', function() {
+    function checkoutOnWhatsApp() {
         if (cart.length === 0) {
             alert('Your cart is empty.');
             return;
@@ -346,7 +432,139 @@ document.addEventListener('DOMContentLoaded', function() {
         saveCart();
         renderCart();
         closeCart();
-    });
+    }
+
+    function fieldValue(id) {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
+    }
+
+    function readCheckoutCustomer() {
+        return {
+            name: fieldValue('checkout-name'),
+            email: fieldValue('checkout-email'),
+            mobile: fieldValue('checkout-mobile'),
+            street: fieldValue('checkout-street'),
+            suburb: fieldValue('checkout-suburb'),
+            city: fieldValue('checkout-city'),
+            province: fieldValue('checkout-province'),
+            postalCode: fieldValue('checkout-postal'),
+            note: fieldValue('checkout-note')
+        };
+    }
+
+    function normaliseMobile(input) {
+        let digits = String(input || '').replace(/[\s()-]/g, '');
+        if (digits.indexOf('+27') === 0) digits = '0' + digits.slice(3);
+        else if (digits.indexOf('27') === 0 && digits.length === 11) digits = '0' + digits.slice(2);
+        return /^0[6-8]\d{8}$/.test(digits) ? digits : '';
+    }
+
+    function validateCheckoutCustomer(customer) {
+        if (customer.name.length < 2) return 'Enter your full name.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) return 'Enter a valid email address.';
+        if (!normaliseMobile(customer.mobile)) return 'Enter a South African mobile number.';
+        if (customer.street.length < 3) return 'Enter the street address.';
+        if (customer.suburb.length < 2) return 'Enter the suburb.';
+        if (customer.city.length < 2) return 'Enter the city.';
+        if (!customer.province) return 'Select a province.';
+        if (!/^\d{4}$/.test(customer.postalCode)) return 'Enter a 4-digit postal code.';
+        return '';
+    }
+
+    function postToPayfast(processUrl, fields) {
+        const allowed = [
+            'https://sandbox.payfast.co.za/eng/process',
+            'https://www.payfast.co.za/eng/process'
+        ];
+        if (allowed.indexOf(processUrl) === -1 || !fields) {
+            throw new Error('Card payment could not be started. Please try again.');
+        }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = processUrl;
+        form.acceptCharset = 'UTF-8';
+        Object.keys(fields).forEach(function(name) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = fields[name] == null ? '' : String(fields[name]);
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Card checkout. The cart stays in this browser until payment-success.html.
+    let payfastSubmitting = false;
+    async function submitPayfastCheckout() {
+        const errorEl = document.getElementById('checkout-error');
+        function showError(message) {
+            errorEl.hidden = false;
+            errorEl.textContent = message;
+        }
+        if (payfastSubmitting) return;
+        errorEl.hidden = true;
+        errorEl.textContent = '';
+        if (cart.length === 0) {
+            showError('Your cart is empty.');
+            return;
+        }
+        const customer = readCheckoutCustomer();
+        const problem = validateCheckoutCustomer(customer);
+        if (problem) {
+            showError(problem);
+            return;
+        }
+        customer.mobile = normaliseMobile(customer.mobile);
+        payfastSubmitting = true;
+        checkoutBtn.disabled = true;
+        const previousLabel = checkoutBtn.textContent;
+        checkoutBtn.textContent = 'Sending you to PayFast...';
+        try {
+            const res = await fetch('/.netlify/functions/payfast-checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer: customer,
+                    items: cart.map(function(item) {
+                        return {
+                            id: item.id || '',
+                            name: item.name,
+                            qty: item.qty,
+                            size: item.size || '',
+                            sizes: item.sizes || null
+                        };
+                    })
+                })
+            });
+            const data = await res.json().catch(function() { return {}; });
+            if (!res.ok) {
+                throw new Error(data.error || 'Card payment could not be started. Please try again.');
+            }
+            const charged = Number(data.amount);
+            const shown = cart.reduce(function(sum, item) { return sum + Number(item.price) * item.qty; }, 0);
+            if (!isFinite(charged) || Math.abs(charged - shown) > 0.009) {
+                throw new Error('The total could not be confirmed. Please refresh the page and try again.');
+            }
+            postToPayfast(data.processUrl, data.fields);
+        } catch (err) {
+            payfastSubmitting = false;
+            checkoutBtn.disabled = false;
+            checkoutBtn.textContent = previousLabel;
+            showError(err.message || 'Card payment could not be started. Please try again.');
+        }
+    }
+
+    if (payfastOn) {
+        document.getElementById('checkout-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitPayfastCheckout();
+        });
+    } else {
+        // Checkout -> WhatsApp order. Cart is cleared only after WhatsApp opens.
+        checkoutBtn.addEventListener('click', checkoutOnWhatsApp);
+    }
 
     renderCart();
 

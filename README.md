@@ -27,7 +27,7 @@ Items already in a cart with no `id`, or with an older id that is not this forma
 
 ### Adding a product details block
 
-Copy the Product details section on `product-streetwear-set.html` (outfit `FF-M-001`) and place it below that page's size selectors and add-to-cart area. One card per piece: the piece name as a heading, then a `<dl>` of label/value rows (`<dt>` and `<dd>`, not a table). Reuse the `.product-details` rules in `styles.css`. Above 720px the cards sit side by side in a three-column grid; at 720px and below they stack in one column. Do not add retailer or brand links. This page has no WhatsApp link, so the sizing tip stays plain text. If a future product page already links to WhatsApp, point the words "WhatsApp" in that tip at the same link.
+Copy the Product details section on `product-streetwear-set.html` (outfit `FF-M-001`) and place it below that page's size selectors and add-to-cart area. One card per piece: the piece name as a heading, then a `<dl>` of four rows in this order: Material, Fit, Colour, Care (`<dt>` and `<dd>`, not a table). Reuse the `.product-details` rules in `styles.css`. Above 720px the cards sit side by side in a three-column grid; at 720px and below they stack in one column. Do not add retailer or brand links. This page has no WhatsApp link, so the sizing tip stays plain text. If a future product page already links to WhatsApp, point the words "WhatsApp" in that tip at the same link.
 
 ### Women's full outfits
 
@@ -51,4 +51,4 @@ Style pages:
 
 The set price is for the full outfit. Piece names are listed on the outfit page. Brand names are plain text. Brand product URLs and piece prices are not on the site.
 
-Sizes come from `WOMEN_SIZE_GUIDES` in `script.js`. Tops use XS to XL. Denim, jeans, and the Barbi pant use waist 28 to 36. The linen culottes and the knit pants use 6 to 16. Shoes use UK 3 to 8. These are general guides, not brand size charts. The next free women's number is FF-W-007.
+In-stock sizes come from `PIECE_STOCK` in `script.js`, keyed by piece id, with `checkedOn` for the date the brand pages were last checked. Each size group sets `data-piece-id` and is left empty. Only sizes in stock are shown. A piece with one size is preselected. The next free women's number is FF-W-007.

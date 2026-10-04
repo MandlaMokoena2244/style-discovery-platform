@@ -102,13 +102,29 @@ document.addEventListener('DOMContentLoaded', function() {
 // NOTE: if you pasted the previous cart code, delete that
 // old block first (from its header comment to the end of file)
 // ============================================
-// General size lists for women's full outfits. Not a brand size chart.
-// Edit the lists here and every women's outfit page that uses that guide updates.
-const WOMEN_SIZE_GUIDES = {
-    top: ['XS', 'S', 'M', 'L', 'XL'],
-    waist: ['28', '30', '32', '34', '36'],
-    numeric: ['6', '8', '10', '12', '14', '16'],
-    shoe: ['3', '4', '5', '6', '7', '8']
+// In-stock sizes only, keyed by piece id. checkedOn is the date the brand
+// pages were last checked. Edit this list; every size group with that
+// data-piece-id updates. Do not add sold-out sizes or brand prices here.
+const PIECE_STOCK = {
+    checkedOn: '4 Oct 2026',
+    pieces: {
+        1: { name: 'Boxy top', sizes: ['XXS', 'XS', 'S', 'M', 'L'] },
+        2: { name: 'Wide leg graphic jogger', sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
+        3: { name: 'Chunky skater sneaker', sizes: ['7', '8', '9'] },
+        4: { name: 'Total Diva Regular T-Shirt', sizes: ['XS', 'S', 'M', 'L', 'XL'] },
+        5: { name: 'Slim Leg Turn Up Barbi Pant in Stone', sizes: ['XS'] },
+        6: { name: 'adidas Originals Firebird denim pants', sizes: ['XS', 'S'] },
+        7: { name: 'Tinley Sneakers', sizes: ['3', '5', '6', '7', '8'] },
+        8: { name: 'Fancy Button Linen Look Wrap Top', sizes: ['XXS'] },
+        9: { name: 'Culotte Linen Look Pant', sizes: ['XS', 'S'] },
+        10: { name: 'Aloisa Knit Cardigan', sizes: ['One Size'] },
+        11: { name: 'Aloisa Knit Pants', sizes: ['One Size'] },
+        12: { name: 'Noella Sneakers', sizes: ['4', '7', '8'] },
+        13: { name: 'Sleeveless Double Breasted Knit Top', sizes: ['XXS'] },
+        14: { name: 'I Need You Corset', sizes: ['S', 'M', 'XL'] },
+        15: { name: 'Sadie Wide Leg Jeans', sizes: ['8', '10'] },
+        16: { name: 'Clause Boots', sizes: ['5'] }
+    }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -117,15 +133,28 @@ document.addEventListener('DOMContentLoaded', function() {
         return 'R' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
-    // Women's outfit pages leave the size groups empty and point at a guide above.
-    document.querySelectorAll('.size-group[data-size-guide]').forEach(group => {
+    // Product pages leave size groups empty and set data-piece-id.
+    // One size is preselected. Several sizes stay unselected until the shopper picks one.
+    const sizeGroups = document.querySelectorAll('.size-group[data-piece-id]');
+    sizeGroups.forEach(group => {
         if (group.querySelector('.size-btn')) return;
-        const sizes = WOMEN_SIZE_GUIDES[group.dataset.sizeGuide];
-        if (!sizes) return;
+        const entry = PIECE_STOCK.pieces[group.dataset.pieceId];
+        const sizes = entry && entry.sizes ? entry.sizes : [];
+        if (!sizes.length) {
+            group.insertAdjacentHTML('beforeend', '<p class="size-none">No sizes in stock.</p>');
+            return;
+        }
+        const only = sizes.length === 1;
         group.innerHTML = sizes.map(size =>
-            '<button class="size-btn" type="button" data-size="' + size + '">' + size + '</button>'
+            '<button class="size-btn' + (only ? ' selected' : '') + '" type="button" data-size="' + size + '">' + size + '</button>'
         ).join('');
     });
+    if (sizeGroups.length && !document.querySelector('.size-check-note')) {
+        const note = document.createElement('p');
+        note.className = 'size-check-note';
+        note.textContent = 'Sizes checked on ' + PIECE_STOCK.checkedOn + '. We confirm stock with you on WhatsApp before you pay.';
+        sizeGroups[sizeGroups.length - 1].insertAdjacentElement('afterend', note);
+    }
 
     const cartBtn = document.getElementById('cart-btn');
     if (!cartBtn) return; // page has no cart button, do nothing

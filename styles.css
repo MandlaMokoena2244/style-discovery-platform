@@ -1201,6 +1201,13 @@ h1, h2, h3, h4 {
     color: var(--white);
     border-color: var(--primary);
 }
+.size-check-note,
+.size-none {
+    margin: -0.35rem 0 1.5rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    line-height: 1.6;
+}
 
 /* Quantity selector */
 .qty-selector {

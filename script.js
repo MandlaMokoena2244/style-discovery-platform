@@ -102,7 +102,30 @@ document.addEventListener('DOMContentLoaded', function() {
 // NOTE: if you pasted the previous cart code, delete that
 // old block first (from its header comment to the end of file)
 // ============================================
+// General size lists for women's full outfits. Not a brand size chart.
+// Edit the lists here and every women's outfit page that uses that guide updates.
+const WOMEN_SIZE_GUIDES = {
+    top: ['XS', 'S', 'M', 'L', 'XL'],
+    waist: ['28', '30', '32', '34', '36'],
+    numeric: ['6', '8', '10', '12', '14', '16'],
+    shoe: ['3', '4', '5', '6', '7', '8']
+};
+
 document.addEventListener('DOMContentLoaded', function() {
+
+    function formatRand(amount) {
+        return 'R' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // Women's outfit pages leave the size groups empty and point at a guide above.
+    document.querySelectorAll('.size-group[data-size-guide]').forEach(group => {
+        if (group.querySelector('.size-btn')) return;
+        const sizes = WOMEN_SIZE_GUIDES[group.dataset.sizeGuide];
+        if (!sizes) return;
+        group.innerHTML = sizes.map(size =>
+            '<button class="size-btn" type="button" data-size="' + size + '">' + size + '</button>'
+        ).join('');
+    });
 
     const cartBtn = document.getElementById('cart-btn');
     if (!cartBtn) return; // page has no cart button, do nothing
@@ -112,14 +135,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Outfit ID format: FF-<M|W|K>-<NNN> (M men, W women, K kids), e.g. FF-M-001.
     // Set data-outfit-id on the product's Add to Cart button. The next free number
-    // in that department is the next ID (FF-M-002, FF-W-001, FF-K-001, ...).
+    // in that department is the next ID (FF-M-002, FF-W-007, FF-K-001, ...).
     // Brand product URLs and supplier details stay in a private Google Sheet keyed
     // by this ID — do not put them in the site. Cart lines with no outfit id
     // (or an older non-FF id) still check out; the id is left off that line.
     const OUTFIT_ID_RE = /^FF-[MWK]-\d{3}$/;
 
-    // Labels for each piece of the set (used in the cart display)
-    const PIECE_LABELS = { top: 'Top', jogger: 'Jogger', shoe: 'Shoe' };
+    // Short labels for the cart and the WhatsApp line. Men's keys stay as they are.
+    const PIECE_LABELS = {
+        top: 'Top',
+        jogger: 'Jogger',
+        shoe: 'Shoe',
+        pants: 'Pants',
+        sneaker: 'Sneaker',
+        boot: 'Boot',
+        cardigan: 'Cardigan',
+        corset: 'Corset',
+        jeans: 'Jeans'
+    };
 
     // ---- Inject cart drawer + overlay into the page ----
     document.body.insertAdjacentHTML('beforeend', `
@@ -150,10 +183,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function saveCart() {
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    }
-
-    function formatRand(amount) {
-        return 'R' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
     // Turn { top: 'M', jogger: 'L', shoe: '9' } into a display string

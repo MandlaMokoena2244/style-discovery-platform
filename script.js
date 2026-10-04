@@ -229,6 +229,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Same product + same sizes for all pieces? Increase quantity instead of a new line
         const existing = cart.find(item =>
             item.id === product.id &&
+            item.name === product.name &&
+            (item.size || '') === (product.size || '') &&
             JSON.stringify(item.sizes || null) === JSON.stringify(product.sizes || null)
         );
         if (existing) {
@@ -314,6 +316,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
+        const defaultLabel = addBtn.innerHTML;
+        const pieceLabels = {
+            top: 'Boxy top',
+            jogger: 'Black wide leg graphic jogger',
+            shoe: 'Chunky lace up skater sneaker'
+        };
         addBtn.addEventListener('click', () => {
             // Collect the chosen size from EACH piece group
             const sizes = {};
@@ -323,24 +331,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (selected) {
                     sizes[group.dataset.piece] = selected.dataset.size;
                 } else if (!missing) {
-                    missing = group.dataset.piece;
+                    missing = group.dataset.label || pieceLabels[group.dataset.piece] || 'this piece';
                 }
             });
 
             if (missing) {
-                const labels = { top: 'Boxy top', jogger: 'Black wide leg graphic jogger', shoe: 'Chunky lace up skater sneaker' };
-                alert('Please select a size for: ' + labels[missing]);
+                alert('Please select a size for: ' + missing);
                 return;
             }
 
             const outfitId = (addBtn.getAttribute('data-outfit-id') || '').trim();
+            const price = Number(addBtn.dataset.price || 1050);
             const product = {
-                name: 'Boxy Top Streetwear Set',
-                brand: 'THE FIX',
-                price: 1050,
-                sizes: sizes,      // e.g. { top: 'M', jogger: 'L', shoe: '9' }
-                qty: parseInt(qtyInput.value)
+                name: addBtn.dataset.name || 'Boxy Top Streetwear Set',
+                brand: addBtn.dataset.brand || 'THE FIX',
+                price: price,
+                qty: parseInt(qtyInput.value, 10)
             };
+            // A single piece stores one size. The full set stores a size per piece.
+            if (addBtn.dataset.singleSize === 'true') {
+                product.size = Object.values(sizes)[0] || '';
+            } else {
+                product.sizes = sizes; // e.g. { top: 'M', jogger: 'L', shoe: '9' }
+            }
             // Only store a real outfit ID. Missing or legacy ids must not block checkout.
             if (OUTFIT_ID_RE.test(outfitId)) product.id = outfitId;
             addToCart(product);
@@ -348,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
             addBtn.textContent = 'Added to Cart \u2713';
             addBtn.classList.add('added');
             setTimeout(() => {
-                addBtn.innerHTML = 'Add to Cart &mdash; R1,050.00';
+                addBtn.innerHTML = defaultLabel;
                 addBtn.classList.remove('added');
             }, 2000);
         });

@@ -51,4 +51,4 @@ Style pages:
 
 The set price is for the full outfit. Piece names are listed on the outfit page. Brand names are plain text. Brand product URLs and piece prices are not on the site.
 
-In-stock sizes come from `PIECE_STOCK` in `script.js`, keyed by piece id, with `checkedOn` for the date the brand pages were last checked. Each size group sets `data-piece-id` and is left empty. Only sizes in stock are shown. A piece with one size is preselected. The next free women's number is FF-W-007.
+In-stock sizes come from `PIECE_STOCK` in `script.js`, keyed by piece id. Each size group sets `data-piece-id` and is left empty. Only sizes in stock are shown. A piece with one size is preselected. The next free women's number is FF-W-007.

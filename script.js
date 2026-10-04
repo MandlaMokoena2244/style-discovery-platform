@@ -102,11 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // NOTE: if you pasted the previous cart code, delete that
 // old block first (from its header comment to the end of file)
 // ============================================
-// In-stock sizes only, keyed by piece id. checkedOn is the date the brand
-// pages were last checked. Edit this list; every size group with that
-// data-piece-id updates. Do not add sold-out sizes or brand prices here.
+// In-stock sizes only, keyed by piece id. Edit this list; every size group
+// with that data-piece-id updates. Do not add sold-out sizes or brand prices here.
 const PIECE_STOCK = {
-    checkedOn: '4 Oct 2026',
     pieces: {
         1: { name: 'Boxy top', sizes: ['XXS', 'XS', 'S', 'M', 'L'] },
         2: { name: 'Wide leg graphic jogger', sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
@@ -149,12 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
             '<button class="size-btn' + (only ? ' selected' : '') + '" type="button" data-size="' + size + '">' + size + '</button>'
         ).join('');
     });
-    if (sizeGroups.length && !document.querySelector('.size-check-note')) {
-        const note = document.createElement('p');
-        note.className = 'size-check-note';
-        note.textContent = 'Sizes checked on ' + PIECE_STOCK.checkedOn + '. We confirm stock with you on WhatsApp before you pay.';
-        sizeGroups[sizeGroups.length - 1].insertAdjacentElement('afterend', note);
-    }
 
     const cartBtn = document.getElementById('cart-btn');
     if (!cartBtn) return; // page has no cart button, do nothing

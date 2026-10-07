@@ -170,7 +170,7 @@ test('a long cart summary splits across PayFast custom fields and still reprices
         outfitItem('FF-W-001', { top: 'XS', pants: 'XS' }, 10),
         outfitItem('FF-W-002', { top: 'XL', pants: 'S', sneaker: '3' }, 10),
         outfitItem('FF-W-003', { top: 'XXS', pants: 'S' }, 10),
-        outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '4' }, 10),
+        outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '6' }, 10),
         outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' }, 10),
         outfitItem('FF-W-006', { corset: 'XL', jeans: '10', boot: '5' }, 10),
         { name: 'Boxy Top', qty: 10, size: 'XXS' },

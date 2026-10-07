@@ -53,6 +53,8 @@ The set price is for the full outfit. Piece names are listed on the outfit page.
 
 In-stock sizes come from `PIECE_STOCK` in `script.js`, keyed by piece id. Each size group sets `data-piece-id` and is left empty. Only sizes in stock are shown. A piece with one size is preselected. The next free women's number is FF-W-007.
 
+A piece is sold out when its size list is empty (`sizes: []` in `PIECE_STOCK`, and `[]` for the same id in `netlify/lib/catalogue.js`). There is no separate sold-out flag. The size row says Sold out, Add to Cart is disabled, and the whole outfit cannot be bought while any piece is missing. Listing cards with `data-outfit-id` or `data-piece-id` show a Sold out badge from `OUTFIT_PIECE_IDS` and `SINGLE_PIECE_IDS` in `script.js`. WhatsApp and card checkout both refuse a cart that still has the piece. To restock, put the sizes back in both lists.
+
 ## Card payments (PayFast)
 
 Orders still go out on WhatsApp until you flip one switch. In `script.js`:

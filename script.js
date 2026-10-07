@@ -121,8 +121,10 @@ function activePaymentProvider() {
     return 'whatsapp';
 }
 
-// In-stock sizes only, keyed by piece id. Edit this list; every size group
-// with that data-piece-id updates. Do not add sold-out sizes or brand prices here.
+// In-stock sizes only, keyed by piece id. Edit this list and the matching
+// STOCK entry in netlify/lib/catalogue.js together. sizes: [] means sold out.
+// Restock by putting sizes back. There is no separate sold-out flag.
+// Do not add brand prices here.
 const PIECE_STOCK = {
     pieces: {
         1: { name: 'Boxy top', sizes: ['XXS', 'XS', 'S', 'M', 'L'] },
@@ -138,11 +140,69 @@ const PIECE_STOCK = {
         11: { name: 'Aloisa Knit Pants', sizes: ['One size fits most'] },
         12: { name: 'Noella Sneakers', sizes: ['6', '7', '8'] },
         13: { name: 'Sleeveless Double Breasted Knit Top', sizes: ['XXS'] },
-        14: { name: 'I Need You Corset', sizes: ['S', 'M', 'XL'] },
-        15: { name: 'Sadie Wide Leg Jeans', sizes: ['8', '10'] },
+        14: { name: 'I Need You Corset', sizes: [] },
+        15: { name: 'Sadie Wide Leg Jeans', sizes: [] },
         16: { name: 'Clause Boots', sizes: ['5'] }
     }
 };
+
+// Piece ids for each outfit, and for pieces sold on their own.
+// Outfit cards use data-outfit-id. Piece cards use data-piece-id.
+// Sold out when any of those pieces has sizes: [].
+const OUTFIT_PIECE_IDS = {
+    'FF-M-001': [1, 2, 3],
+    'FF-W-001': [4, 5],
+    'FF-W-002': [4, 6, 7],
+    'FF-W-003': [8, 9],
+    'FF-W-004': [10, 11, 12],
+    'FF-W-005': [13, 5],
+    'FF-W-006': [14, 15, 16]
+};
+
+const SINGLE_PIECE_IDS = {
+    'Boxy Top': 1,
+    'Black Wide Leg Graphic Jogger': 2,
+    'Chunky Lace Up Skater Sneaker': 3
+};
+
+function pieceSizes(pieceId) {
+    const entry = PIECE_STOCK.pieces[pieceId];
+    return entry && Array.isArray(entry.sizes) ? entry.sizes : [];
+}
+
+function pieceIsSoldOut(pieceId) {
+    return pieceSizes(pieceId).length === 0;
+}
+
+function outfitIsSoldOut(outfitId) {
+    const ids = OUTFIT_PIECE_IDS[outfitId];
+    return Array.isArray(ids) && ids.some(pieceIsSoldOut);
+}
+
+function cartLinePieceIds(item) {
+    if (!item || typeof item !== 'object') return [];
+    const id = typeof item.id === 'string' ? item.id.trim() : '';
+    if (OUTFIT_PIECE_IDS[id]) return OUTFIT_PIECE_IDS[id];
+    if (SINGLE_PIECE_IDS[item.name] != null) return [SINGLE_PIECE_IDS[item.name]];
+    return [];
+}
+
+function cartLineSoldOut(item) {
+    return cartLinePieceIds(item).some(pieceIsSoldOut);
+}
+
+function soldOutCartMessage(items) {
+    const names = [];
+    (items || []).forEach(function(item) {
+        if (!cartLineSoldOut(item)) return;
+        const label = item.name || 'This item';
+        if (names.indexOf(label) !== -1) return;
+        names.push(label);
+    });
+    if (!names.length) return '';
+    if (names.length === 1) return names[0] + ' is sold out. Remove it from your cart.';
+    return 'Some items are sold out. Remove them from your cart.';
+}
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -155,16 +215,46 @@ document.addEventListener('DOMContentLoaded', function() {
     const sizeGroups = document.querySelectorAll('.size-group[data-piece-id]');
     sizeGroups.forEach(group => {
         if (group.querySelector('.size-btn')) return;
-        const entry = PIECE_STOCK.pieces[group.dataset.pieceId];
-        const sizes = entry && entry.sizes ? entry.sizes : [];
+        const sizes = pieceSizes(group.dataset.pieceId);
         if (!sizes.length) {
-            group.insertAdjacentHTML('beforeend', '<p class="size-none">No sizes in stock.</p>');
+            group.insertAdjacentHTML('beforeend', '<p class="sold-out-label">Sold out</p>');
             return;
         }
         const only = sizes.length === 1;
         group.innerHTML = sizes.map(size =>
             '<button class="size-btn' + (only ? ' selected' : '') + '" type="button" data-size="' + size + '">' + size + '</button>'
         ).join('');
+    });
+
+    const productGroups = document.querySelectorAll('.product-info-col .size-group[data-piece-id]');
+    const productSoldOut = Array.prototype.some.call(productGroups, function(group) {
+        return pieceIsSoldOut(group.dataset.pieceId);
+    });
+    if (productSoldOut) {
+        const price = document.querySelector('.product-info-col .product-price');
+        const name = document.querySelector('.product-info-col .product-name');
+        const anchor = price || name;
+        if (anchor && !document.querySelector('.product-info-col > .sold-out-badge')) {
+            anchor.insertAdjacentHTML('afterend', '<p class="sold-out-badge">Sold out</p>');
+        }
+        const soldOutBtn = document.getElementById('add-to-cart');
+        if (soldOutBtn) {
+            soldOutBtn.disabled = true;
+            soldOutBtn.textContent = 'Sold out';
+            soldOutBtn.setAttribute('aria-disabled', 'true');
+        }
+    }
+
+    function placeSoldOutBadge(card) {
+        if (card.querySelector(':scope > .sold-out-badge')) return;
+        card.insertAdjacentHTML('afterbegin', '<span class="sold-out-badge">Sold out</span>');
+    }
+
+    document.querySelectorAll('.item-card[data-outfit-id], .style-card[data-outfit-id]').forEach(function(card) {
+        if (outfitIsSoldOut(card.dataset.outfitId)) placeSoldOutBadge(card);
+    });
+    document.querySelectorAll('.item-card[data-piece-id]').forEach(function(card) {
+        if (pieceIsSoldOut(card.dataset.pieceId)) placeSoldOutBadge(card);
     });
 
     const cartBtn = document.getElementById('cart-btn');
@@ -272,8 +362,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
                 </div>
+                <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 <button class="btn-checkout" id="checkout-btn" type="${payfastOn ? 'submit' : 'button'}"${payfastOn ? ' form="checkout-form"' : ''}>${payfastOn ? 'Pay by card' : 'Order on WhatsApp'}</button>
-                ${payfastOn ? '<p class="checkout-error" id="checkout-error" role="alert" hidden></p>' : ''}
             </div>
         </aside>
     `);
@@ -285,6 +375,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const countEl      = document.getElementById('cart-count');
     const closeBtn     = document.getElementById('cart-close');
     const checkoutBtn  = document.getElementById('checkout-btn');
+    const checkoutError = document.getElementById('checkout-error');
+
+    function showCheckoutError(message, reason) {
+        if (!checkoutError) return;
+        checkoutError.hidden = !message;
+        checkoutError.textContent = message || '';
+        if (message) checkoutError.dataset.reason = reason || 'checkout';
+        else delete checkoutError.dataset.reason;
+    }
 
     function saveCart() {
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
@@ -345,6 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="cart-item-info">
                         <h4>${item.brand ? item.brand + ' — ' + item.name : item.name}</h4>
                         <p>${formatSizes(item)} &nbsp;&middot;&nbsp; Qty: ${item.qty}</p>
+                        ${cartLineSoldOut(item) ? '<p class="cart-sold-out">Sold out</p>' : ''}
                     </div>
                     <div class="cart-item-right">
                         <p class="cart-item-price">${formatRand(item.price * item.qty)}</p>
@@ -357,9 +457,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Total
         const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
         totalEl.textContent = formatRand(total);
+
+        const blocked = soldOutCartMessage(cart);
+        if (blocked) showCheckoutError(blocked, 'sold-out');
+        else if (checkoutError && checkoutError.dataset.reason === 'sold-out') showCheckoutError('');
     }
 
     window.addToCart = function(product) {
+        if (cartLineSoldOut(product)) return;
         // Same product + same sizes for all pieces? Increase quantity instead of a new line
         const existing = cart.find(item =>
             item.id === product.id &&
@@ -402,6 +507,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function checkoutOnWhatsApp() {
         if (cart.length === 0) {
             alert('Your cart is empty.');
+            return;
+        }
+        const blocked = soldOutCartMessage(cart);
+        if (blocked) {
+            showCheckoutError(blocked, 'sold-out');
             return;
         }
         const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -495,8 +605,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (payfastSubmitting) return;
         errorEl.hidden = true;
         errorEl.textContent = '';
+        delete errorEl.dataset.reason;
         if (cart.length === 0) {
             showError('Your cart is empty.');
+            return;
+        }
+        const blocked = soldOutCartMessage(cart);
+        if (blocked) {
+            showCheckoutError(blocked, 'sold-out');
             return;
         }
         const customer = readCheckoutCustomer();
@@ -588,6 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
             shoe: 'Chunky lace up skater sneaker'
         };
         addBtn.addEventListener('click', () => {
+            if (addBtn.disabled || productSoldOut) return;
             // Collect the chosen size from EACH piece group
             const sizes = {};
             let missing = null;

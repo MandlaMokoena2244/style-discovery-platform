@@ -10,7 +10,7 @@ const {
     generateSignature,
     itnSignature
 } = require('../netlify/lib/signature');
-const { STOCK, OUTFITS, PIECES } = require('../netlify/lib/catalogue');
+const { STOCK, OUTFITS, PIECES, isSoldOut } = require('../netlify/lib/catalogue');
 const { buildCheckout, priceCart, compactSummary, packSummary, readSummary, parseSummary } = require('../netlify/lib/order');
 const { readConfig } = require('../netlify/lib/config');
 const { handleCheckout } = require('../netlify/functions/payfast-checkout');
@@ -172,7 +172,7 @@ test('a long cart summary splits across PayFast custom fields and still reprices
         outfitItem('FF-W-003', { top: 'XXS', pants: 'S' }, 10),
         outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '6' }, 10),
         outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' }, 10),
-        outfitItem('FF-W-006', { corset: 'XL', jeans: '10', boot: '5' }, 10),
+        outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' }, 10),
         { name: 'Boxy Top', qty: 10, size: 'XXS' },
         { name: 'Black Wide Leg Graphic Jogger', qty: 10, size: 'XXS' },
         { name: 'Chunky Lace Up Skater Sneaker', qty: 10, size: '7' }
@@ -189,10 +189,120 @@ test('a long cart summary splits across PayFast custom fields and still reprices
 test('an order over R4,000 is still charged the item total only', () => {
     const priced = priceCart([
         outfitItem('FF-W-002', { top: 'M', pants: 'S', sneaker: '7' }),
-        outfitItem('FF-W-006', { corset: 'S', jeans: '8', boot: '5' })
+        outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '6' })
     ]);
     assert.equal(priced.deliveryFeeCents, 0);
-    assert.equal(priced.totalCents, (4700 + 5500) * 100);
+    assert.equal(priced.totalCents, (4700 + 3300) * 100);
+});
+
+function readScriptConst(script, name) {
+    const marker = 'const ' + name + ' = ';
+    const start = script.indexOf(marker);
+    assert.notEqual(start, -1, name);
+    const end = script.indexOf('\n};', start);
+    return Function('return ' + script.slice(start + marker.length, end + 2))();
+}
+
+test('an empty size list means sold out, including a cart that already holds the set', async () => {
+    assert.equal(isSoldOut(14), true);
+    assert.equal(isSoldOut(15), true);
+    assert.equal(isSoldOut(16), false);
+    assert.deepEqual(STOCK[14], []);
+    assert.deepEqual(STOCK[15], []);
+
+    const stale = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [outfitItem('FF-W-006', { corset: 'S', jeans: '8', boot: '5' })]
+        })
+    }, { env: ENV });
+    assert.equal(stale.statusCode, 400);
+    const staleBody = JSON.parse(stale.body);
+    assert.equal(staleBody.error, 'Corset and Wide Leg Night Set is sold out. Remove it from your cart.');
+    assert.equal(staleBody.error.includes('\u2014'), false);
+
+    const noSizes = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [{ id: 'FF-W-006', qty: 1 }]
+        })
+    }, { env: ENV });
+    assert.equal(noSizes.statusCode, 400);
+    assert.equal(JSON.parse(noSizes.body).error, staleBody.error);
+
+    const mixed = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [
+                outfitItem('FF-M-001', { top: 'M', jogger: 'L', shoe: '9' }),
+                outfitItem('FF-W-006', { corset: 'XL', jeans: '10', boot: '5' })
+            ]
+        })
+    }, { env: ENV });
+    assert.equal(mixed.statusCode, 400);
+    assert.equal(JSON.parse(mixed.body).error, staleBody.error);
+
+    const badSize = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [outfitItem('FF-M-001', { top: 'XXL', jogger: 'L', shoe: '9' })]
+        })
+    }, { env: ENV });
+    assert.equal(badSize.statusCode, 400);
+    assert.match(JSON.parse(badSize.body).error, /in-stock size/);
+    assert.equal(JSON.parse(badSize.body).error.includes('sold out'), false);
+
+    const script = fs.readFileSync(path.join(ROOT, 'script.js'), 'utf8');
+    const outfits = readScriptConst(script, 'OUTFIT_PIECE_IDS');
+    const singles = readScriptConst(script, 'SINGLE_PIECE_IDS');
+    for (const [id, outfit] of Object.entries(OUTFITS)) {
+        assert.deepEqual(outfits[id], outfit.pieces.map((piece) => piece.stockId));
+    }
+    for (const [name, piece] of Object.entries(PIECES)) {
+        assert.equal(singles[name], piece.stockId);
+    }
+    assert.equal(script.includes('No sizes in stock.'), false);
+    assert.match(script, /is sold out\. Remove it from your cart\./);
+
+    const helpersEnd = script.indexOf("document.addEventListener('DOMContentLoaded'", script.indexOf('const PIECE_STOCK = '));
+    const client = Function(script.slice(script.indexOf('const PIECE_STOCK = '), helpersEnd) + `
+        return { pieceIsSoldOut, outfitIsSoldOut, cartLineSoldOut, soldOutCartMessage, PIECE_STOCK };
+    `)();
+    assert.equal(client.pieceIsSoldOut(14), true);
+    assert.equal(client.pieceIsSoldOut(15), true);
+    assert.equal(client.pieceIsSoldOut(16), false);
+    assert.equal(client.outfitIsSoldOut('FF-W-006'), true);
+    assert.equal(client.outfitIsSoldOut('FF-M-001'), false);
+    const staleLine = {
+        id: 'FF-W-006',
+        name: 'Corset and Wide Leg Night Set',
+        sizes: { corset: 'S', jeans: '8', boot: '5' }
+    };
+    assert.equal(client.cartLineSoldOut(staleLine), true);
+    assert.equal(client.soldOutCartMessage([staleLine]), staleBody.error);
+    assert.equal(client.cartLineSoldOut({ name: 'Boxy Top', size: 'M' }), false);
+    client.PIECE_STOCK.pieces[1].sizes = [];
+    assert.equal(
+        client.soldOutCartMessage([{ name: 'Boxy Top', size: 'M' }]),
+        'Boxy Top is sold out. Remove it from your cart.'
+    );
+    assert.equal(client.soldOutCartMessage([
+        staleLine,
+        { name: 'Boxy Top', size: 'M' }
+    ]), 'Some items are sold out. Remove them from your cart.');
+
+    const evening = fs.readFileSync(path.join(ROOT, 'women-evening.html'), 'utf8');
+    const full = fs.readFileSync(path.join(ROOT, 'women-full-outfits.html'), 'utf8');
+    const men = fs.readFileSync(path.join(ROOT, 'men-individual-pieces.html'), 'utf8');
+    assert.match(evening, /class="item-card outfit-card reveal" data-outfit-id="FF-W-006"/);
+    assert.match(full, /data-outfit-id="FF-W-006"/);
+    assert.match(men, /data-piece-id="1"/);
+    assert.match(men, /data-piece-id="2"/);
+    assert.match(men, /data-piece-id="3"/);
 });
 
 test('unknown outfits, bad sizes, and missing config are rejected', async () => {

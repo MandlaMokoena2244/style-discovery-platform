@@ -20,7 +20,7 @@ const STOCK = {
     9: ['XS', 'S'],
     10: ['One size fits most'],
     11: ['One size fits most'],
-    12: ['4', '7', '8'],
+    12: ['6', '7', '8'],
     13: ['XXS'],
     14: ['S', 'M', 'XL'],
     15: ['8', '10'],

@@ -136,7 +136,7 @@ const PIECE_STOCK = {
         9: { name: 'Culotte Linen Look Pant', sizes: ['XS', 'S'] },
         10: { name: 'Aloisa Knit Cardigan', sizes: ['One size fits most'] },
         11: { name: 'Aloisa Knit Pants', sizes: ['One size fits most'] },
-        12: { name: 'Noella Sneakers', sizes: ['4', '7', '8'] },
+        12: { name: 'Noella Sneakers', sizes: ['6', '7', '8'] },
         13: { name: 'Sleeveless Double Breasted Knit Top', sizes: ['XXS'] },
         14: { name: 'I Need You Corset', sizes: ['S', 'M', 'XL'] },
         15: { name: 'Sadie Wide Leg Jeans', sizes: ['8', '10'] },

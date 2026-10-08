@@ -127,7 +127,7 @@ const PIECE_STOCK = {
     pieces: {
         1: { name: 'Boxy top', sizes: ['XXS', 'XS', 'S', 'M', 'L'] },
         2: { name: 'Wide leg graphic jogger', sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
-        3: { name: 'Chunky skater sneaker', sizes: ['7', '8', '9'] },
+        3: { name: 'Chunky skater sneaker', sizes: ['7', '8'] },
         4: { name: 'Total Diva Regular T-Shirt', sizes: ['XS', 'S', 'M', 'L', 'XL'] },
         5: { name: 'Slim Leg Turn Up Barbi Pant in Stone', sizes: ['XS'] },
         6: { name: 'adidas Originals Firebird denim pants', sizes: ['XS', 'S'] },

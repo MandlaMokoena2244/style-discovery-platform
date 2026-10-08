@@ -11,7 +11,7 @@ const OUTFIT_ID_RE = /^FF-[MWK]-\d{3}$/;
 const STOCK = {
     1: ['XXS', 'XS', 'S', 'M', 'L'],
     2: ['XXS', 'XS', 'S', 'M', 'L', 'XL'],
-    3: ['7', '8', '9'],
+    3: ['7', '8'],
     4: ['XS', 'S', 'M', 'L', 'XL'],
     5: ['XS'],
     6: ['XS', 'S'],

@@ -132,7 +132,7 @@ test('checkout ignores the client price and does not add a delivery fee', async 
         body: JSON.stringify({
             customer: customer(),
             items: [
-                outfitItem('FF-M-001', { top: 'M', jogger: 'L', shoe: '9' }),
+                outfitItem('FF-M-001', { top: 'M', jogger: 'L', shoe: '8' }),
                 { name: 'Boxy Top', price: 1, qty: 2, size: 'M' }
             ]
         })
@@ -153,7 +153,7 @@ test('checkout ignores the client price and does not add a delivery fee', async 
     assert.equal(body.fields.return_url, 'https://fashforge.co.za/payment-success.html');
     assert.equal(body.fields.cancel_url, 'https://fashforge.co.za/payment-cancelled.html');
     assert.equal(body.fields.notify_url, 'https://fashforge.co.za/.netlify/functions/payfast-notify');
-    assert.match(body.fields.custom_str1, /FF-M-001:top=M,jogger=L,shoe=9:1/);
+    assert.match(body.fields.custom_str1, /FF-M-001:top=M,jogger=L,shoe=8:1/);
     assert.match(body.fields.custom_str1, /M-TOP:M:2/);
     assert.match(body.fields.custom_str1, /D:Johannesburg:2196/);
     assert.match(body.fields.custom_str2, /0672565980/);

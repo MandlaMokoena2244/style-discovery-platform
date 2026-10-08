@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { OUTFIT_ID_RE, STOCK, OUTFITS, PIECES, PIECE_BY_CODE, SA_PROVINCES } = require('./catalogue');
+const { OUTFIT_ID_RE, STOCK, OUTFITS, PIECES, PIECE_BY_CODE, SA_PROVINCES, isSoldOut } = require('./catalogue');
 const { generateSignature } = require('./signature');
 
 const MAX_QTY = 10;
@@ -124,6 +124,9 @@ function priceItem(raw) {
     if (OUTFIT_ID_RE.test(id)) {
         const outfit = OUTFITS[id];
         if (!outfit) throw new CheckoutError('An item in the cart is no longer available.');
+        if (outfit.pieces.some((piece) => isSoldOut(piece.stockId))) {
+            throw new CheckoutError(outfit.name + ' is sold out. Remove it from your cart.');
+        }
         const sizes = sizeMap(raw.sizes);
         if (!sizes) throw new CheckoutError('Choose a size for each piece in ' + outfit.name + '.');
         const chosen = {};
@@ -150,6 +153,9 @@ function priceItem(raw) {
     const name = typeof raw.name === 'string' ? raw.name.trim() : '';
     const piece = PIECES[name];
     if (!piece) throw new CheckoutError('An item in the cart is no longer available.');
+    if (isSoldOut(piece.stockId)) {
+        throw new CheckoutError(name + ' is sold out. Remove it from your cart.');
+    }
     const size = raw.size == null ? '' : String(raw.size).trim();
     if (!STOCK[piece.stockId].includes(size)) {
         throw new CheckoutError('Choose an in-stock size for ' + name + '.');

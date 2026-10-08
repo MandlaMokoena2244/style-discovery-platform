@@ -2,6 +2,7 @@
 // Selling prices only. No brand links and no cost prices.
 // Keep this in step with data-price / data-name on the product pages
 // and with PIECE_STOCK in script.js.
+// An empty size list means that piece is sold out. Put the sizes back to restock.
 //
 // Delivery: the site states "Free delivery on orders over R4,000" and
 // does not state a delivery fee. The amount charged is the item total.
@@ -22,8 +23,8 @@ const STOCK = {
     11: ['One size fits most'],
     12: ['6', '7', '8'],
     13: ['XXS'],
-    14: ['S', 'M', 'XL'],
-    15: ['8', '10'],
+    14: [],
+    15: [],
     16: ['5']
 };
 
@@ -113,11 +114,17 @@ const SA_PROVINCES = [
     'Western Cape'
 ];
 
+function isSoldOut(stockId) {
+    const sizes = STOCK[stockId];
+    return Array.isArray(sizes) && sizes.length === 0;
+}
+
 module.exports = {
     OUTFIT_ID_RE,
     STOCK,
     OUTFITS,
     PIECES,
     PIECE_BY_CODE,
-    SA_PROVINCES
+    SA_PROVINCES,
+    isSoldOut
 };

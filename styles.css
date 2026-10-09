@@ -1800,6 +1800,19 @@ h1, h2, h3, h4 {
     line-height: 1.5;
     margin-bottom: 0.75rem;
 }
+.cart-policy-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin-top: 0.9rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+}
+.cart-policy-links a {
+    color: var(--text-light);
+    border-bottom: 1px solid var(--accent);
+}
 .checkout-form {
     padding: 0 1.5rem 1.5rem;
     border-top: 1px solid #eee;
@@ -1869,4 +1882,95 @@ h1, h2, h3, h4 {
 .payment-result a {
     color: var(--text-dark);
     border-bottom: 1px solid var(--accent);
+}
+
+/* Contact form honeypot stays out of view. Netlify still reads the field. */
+.honeypot {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+.form-thanks,
+.form-error {
+    margin-top: 1rem;
+    line-height: 1.7;
+}
+.form-error {
+    color: #c0392b;
+    font-size: 0.9rem;
+}
+
+/* Policy pages */
+.policy {
+    max-width: 46rem;
+    margin: 0 auto;
+}
+.policy-hero .page-hero-content {
+    padding: 0 1.25rem;
+    max-width: 100%;
+}
+.policy-hero .page-hero-content h1 {
+    letter-spacing: 0.03em;
+    font-size: clamp(1.7rem, 5vw, 3.2rem);
+    max-width: 16ch;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.15;
+}
+.policy-meta,
+.policy-related {
+    color: var(--text-light);
+}
+.policy h2 {
+    font-size: clamp(1.35rem, 3vw, 1.8rem);
+    margin: 2.25rem 0 0.75rem;
+}
+.policy p,
+.policy li {
+    margin-bottom: 0.85rem;
+}
+.policy ul,
+.policy ol {
+    padding-left: 1.25rem;
+    margin: 0 0 1rem;
+}
+.policy a {
+    color: var(--text-dark);
+    border-bottom: 1px solid var(--accent);
+}
+.policy-facts {
+    margin: 1.5rem 0 2rem;
+}
+.policy-facts div {
+    display: grid;
+    grid-template-columns: minmax(9rem, 16rem) 1fr;
+    gap: 0.35rem 1.25rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid #eee;
+}
+.policy-contact {
+    display: grid;
+    grid-template-columns: minmax(9rem, 14rem) 1fr;
+    gap: 0.75rem 1.25rem;
+    margin: 1.25rem 0 0;
+}
+.policy-facts dt,
+.policy-contact dt {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+.policy-facts dd,
+.policy-contact dd {
+    margin: 0;
+}
+@media (max-width: 640px) {
+    .policy-facts div,
+    .policy-contact {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
 }

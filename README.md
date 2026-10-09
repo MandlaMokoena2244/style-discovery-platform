@@ -64,7 +64,7 @@ const PAYMENT_PROVIDER = 'whatsapp'; // change to 'payfast' when card payments s
 ```
 
 - `whatsapp` (the default): the cart keeps the Order on WhatsApp button. Merging this does not turn card payments on.
-- `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form still opens WhatsApp.
+- `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Netlify Forms and does not follow this switch. WhatsApp on the contact page is for queries.
 
 The amount charged is the item total from `netlify/lib/catalogue.js`. The shop says "Free delivery on orders over R4,000" and does not state a delivery fee, so no delivery fee is added either way. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
 

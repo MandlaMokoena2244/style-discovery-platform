@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Contact FashForge on WhatsApp at +27 67 256 5980 or on Instagram @fashforge_official_account.">
+    <meta name="description" content="Contact FashForge with the form on this page, on WhatsApp at +27 67 256 5980, or on Instagram @fashforge_official_account.">
     <meta property="og:title" content="Contact | FashForge">
-    <meta property="og:description" content="Contact FashForge on WhatsApp at +27 67 256 5980 or on Instagram @fashforge_official_account.">
+    <meta property="og:description" content="Contact FashForge with the form on this page, on WhatsApp at +27 67 256 5980, or on Instagram @fashforge_official_account.">
     <meta property="og:url" content="https://fashforge.co.za/contact.html">
     <meta property="og:type" content="website">
     <link rel="canonical" href="https://fashforge.co.za/contact.html">
@@ -41,7 +41,7 @@
         <div class="section-header reveal">
             <span class="section-label">We'd Love to Hear From You</span>
             <h2 class="section-title">Let's Connect</h2>
-            <p class="section-desc">Message FashForge on WhatsApp, or follow along on Instagram.</p>
+            <p class="section-desc">Send a query with the form, or message us on WhatsApp. You can also follow along on Instagram.</p>
         </div>
         <div class="contact-grid">
             <div class="contact-info reveal">
@@ -59,14 +59,22 @@
             </div>
 
             <div class="contact-form reveal">
-                <form>
+                <form name="contact" method="POST" action="/" data-netlify="true" netlify-honeypot="bot-field" data-netlify-honeypot="bot-field">
+                    <input type="hidden" name="form-name" value="contact">
+                    <p class="honeypot" aria-hidden="true">
+                        <label>Do not fill this out if you are human: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+                    </p>
                     <div class="form-group">
                         <label for="name">Full Name</label>
-                        <input type="text" id="name" name="name" placeholder="Your name" required>
+                        <input type="text" id="name" name="name" placeholder="Your name" autocomplete="name" required>
                     </div>
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" placeholder="Your email" required>
+                        <input type="email" id="email" name="email" placeholder="Your email" autocomplete="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone (optional)</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Your phone number" autocomplete="tel">
                     </div>
                     <div class="form-group">
                         <label for="subject">Subject</label>
@@ -76,8 +84,9 @@
                         <label for="message">Message</label>
                         <textarea id="message" name="message" placeholder="Tell us more about your inquiry..." required></textarea>
                     </div>
-                    <button type="submit" class="submit-btn">Send on WhatsApp</button>
+                    <button type="submit" class="submit-btn">Send message</button>
                 </form>
+                <p class="form-thanks" id="contact-thanks" role="status" hidden>Thanks, we have received your message and will get back to you within 3 working days.</p>
             </div>
         </div>
     </section>
@@ -111,6 +120,14 @@
                 <ul>
                     <li><a href="about.html">About</a></li>
                     <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Policies</h4>
+                <ul>
+                    <li><a href="terms-and-conditions.html">Terms and Conditions</a></li>
+                    <li><a href="refunds-and-cancellations.html">Refunds and Cancellations</a></li>
+                    <li><a href="delivery-policy.html">Delivery Policy</a></li>
                 </ul>
             </div>
             <div class="footer-col">

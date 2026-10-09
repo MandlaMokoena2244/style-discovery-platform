@@ -66,32 +66,35 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Contact form -> WhatsApp (name + message, plus any subject/email the visitor typed)
+    // Contact form posts to Netlify Forms. WhatsApp on the contact page is only for queries.
     const contactForm = document.querySelector('.contact-form form');
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            const name = (document.getElementById('name').value || '').trim();
-            const message = (document.getElementById('message').value || '').trim();
-            if (!name || !message) {
-                alert('Please add your name and a message.');
-                return;
-            }
-            const subject = (document.getElementById('subject').value || '').trim();
-            const email = (document.getElementById('email').value || '').trim();
-            let text = "Hi FashForge, my name is " + name + ".";
-            if (subject) text += "\nSubject: " + subject;
-            if (email) text += "\nEmail: " + email;
-            text += "\n\n" + message;
-            const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(text);
-            console.log('WhatsApp contact URL:', url);
-            const opened = window.open(url, '_blank');
-            if (!opened) {
-                alert('Allow pop-ups to open WhatsApp and send your message.');
-                return;
-            }
-            try { opened.opener = null; } catch (err) { /* already opened */ }
-            this.reset();
+            const form = this;
+            const button = form.querySelector('[type="submit"]');
+            const error = form.querySelector('.form-error');
+            if (error) error.remove();
+            if (button) button.disabled = true;
+            const body = new URLSearchParams(new FormData(form)).toString();
+            fetch('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            }).then(function(response) {
+                const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                if (!response.ok && !local) throw new Error('send failed');
+                form.hidden = true;
+                const thanks = document.getElementById('contact-thanks');
+                if (thanks) thanks.hidden = false;
+            }).catch(function() {
+                if (button) button.disabled = false;
+                const note = document.createElement('p');
+                note.className = 'form-error';
+                note.setAttribute('role', 'alert');
+                note.textContent = 'We could not send your message just now. Please try again, or WhatsApp us on +27 67 256 5980.';
+                form.appendChild(note);
+            });
         });
     }
 
@@ -109,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // the live PayFast account is verified.
 // 'payfast' replaces that button with the card checkout form.
 // There is no WhatsApp order button while this is 'payfast'.
-// The contact form still uses WhatsApp either way.
+// The contact form is a Netlify Form and does not follow this switch.
 // ============================================
 const PAYMENT_PROVIDER = 'whatsapp';
 
@@ -364,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 <button class="btn-checkout" id="checkout-btn" type="${payfastOn ? 'submit' : 'button'}"${payfastOn ? ' form="checkout-form"' : ''}>${payfastOn ? 'Pay by card' : 'Order on WhatsApp'}</button>
+                <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
         </aside>
     `);

@@ -107,7 +107,20 @@ test('server catalogue matches the product pages and in-stock sizes', () => {
     const pieces = [
         ['product-boxy-top.html', 'Boxy Top', '250'],
         ['product-graphic-jogger.html', 'Black Wide Leg Graphic Jogger', '500'],
-        ['product-skater-sneaker.html', 'Chunky Lace Up Skater Sneaker', '400']
+        ['product-skater-sneaker.html', 'Chunky Lace Up Skater Sneaker', '400'],
+        ['product-total-diva-tee.html', 'Total Diva Regular T-Shirt', '899'],
+        ['product-barbi-pant-tan.html', 'Barbi Pant, tan colour', '479.99'],
+        ['product-barbi-pant-stone.html', 'Barbi Pant, stone colour', '479.99'],
+        ['product-firebird-denim.html', 'adidas Originals Firebird Denim Pants', '2699.95'],
+        ['product-tinley-sneakers.html', 'Tinley Sneakers', '1499'],
+        ['product-orange-wrap-top.html', 'Fancy Button Linen Look Wrap Top, orange', '419.99'],
+        ['product-orange-culotte.html', 'Culotte Linen Look Pant, orange', '479.99'],
+        ['product-aloisa-cardigan.html', 'Aloisa Knit Cardigan', '1199'],
+        ['product-aloisa-pants.html', 'Aloisa Knit Pants', '1199'],
+        ['product-noella-sneakers.html', 'Noella Sneakers', '1200'],
+        ['product-taupe-knit-top.html', 'Sleeveless Double Breasted Knit Top, taupe', '429.99'],
+        ['product-i-need-you-corset.html', 'I Need You Corset', '1899'],
+        ['product-sadie-jeans.html', 'Sadie Wide Leg Jeans', '1999']
     ];
     for (const [file, name, price] of pieces) {
         const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
@@ -124,6 +137,38 @@ test('server catalogue matches the product pages and in-stock sizes', () => {
     for (const [id, sizes] of Object.entries(STOCK)) {
         assert.deepEqual(pieceStock.pieces[id].sizes, sizes);
     }
+});
+
+test('a women\'s single piece is priced from the catalogue, and a sold-out piece is refused', async () => {
+    const response = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [
+                { name: 'Barbi Pant, tan colour', price: 1, qty: 2, size: 'XS' },
+                { name: 'adidas Originals Firebird Denim Pants', price: 1, qty: 1, size: 'S' }
+            ]
+        })
+    }, {
+        env: ENV,
+        now: new Date('2026-10-12T12:00:00Z'),
+        randomInt: () => 0
+    });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.equal(body.amount, '3659.93');
+    assert.match(body.fields.custom_str1, /W-BARBI-TAN:XS:2/);
+    assert.match(body.fields.custom_str1, /W-DENIM:S:1/);
+
+    const sold = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [{ name: 'I Need You Corset', qty: 1, size: 'S' }]
+        })
+    }, { env: ENV });
+    assert.equal(sold.statusCode, 400);
+    assert.equal(JSON.parse(sold.body).error, 'I Need You Corset is sold out. Remove it from your cart.');
 });
 
 test('checkout ignores the client price and does not add a delivery fee', async () => {

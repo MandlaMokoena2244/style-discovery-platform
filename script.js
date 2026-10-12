@@ -35,24 +35,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Scroll reveal animation
-    const revealElements = document.querySelectorAll('.reveal');
-
-    const revealOnScroll = () => {
-        revealElements.forEach(el => {
-            const windowHeight = window.innerHeight;
-            const elementTop = el.getBoundingClientRect().top;
-            const revealPoint = 150;
-
-            if (elementTop < windowHeight - revealPoint) {
-                el.classList.add('active');
-            }
-        });
-    };
-
-    window.addEventListener('scroll', revealOnScroll);
-    revealOnScroll();
-
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
@@ -165,7 +147,20 @@ const OUTFIT_PIECE_IDS = {
 const SINGLE_PIECE_IDS = {
     'Boxy Top': 1,
     'Black Wide Leg Graphic Jogger': 2,
-    'Chunky Lace Up Skater Sneaker': 3
+    'Chunky Lace Up Skater Sneaker': 3,
+    'Total Diva Regular T-Shirt': 4,
+    'Barbi Pant, tan colour': 5,
+    'Barbi Pant, stone colour': 5,
+    'adidas Originals Firebird Denim Pants': 6,
+    'Tinley Sneakers': 7,
+    'Fancy Button Linen Look Wrap Top, orange': 8,
+    'Culotte Linen Look Pant, orange': 9,
+    'Aloisa Knit Cardigan': 10,
+    'Aloisa Knit Pants': 11,
+    'Noella Sneakers': 12,
+    'Sleeveless Double Breasted Knit Top, taupe': 13,
+    'I Need You Corset': 14,
+    'Sadie Wide Leg Jeans': 15
 };
 
 function pieceSizes(pieceId) {

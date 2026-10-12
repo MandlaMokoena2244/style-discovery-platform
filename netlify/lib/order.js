@@ -116,6 +116,10 @@ function sizeMap(raw) {
     return raw;
 }
 
+function toCents(amount) {
+    return Math.round(Number(amount) * 100);
+}
+
 function priceItem(raw) {
     if (!raw || typeof raw !== 'object') throw new CheckoutError('An item in the cart is not valid.');
     const qty = asQty(raw.qty);
@@ -145,8 +149,8 @@ function priceItem(raw) {
             qty,
             sizes: chosen,
             pieces: outfit.pieces,
-            unitCents: outfit.price * 100,
-            lineCents: outfit.price * 100 * qty
+            unitCents: toCents(outfit.price),
+            lineCents: toCents(outfit.price) * qty
         };
     }
 
@@ -166,8 +170,8 @@ function priceItem(raw) {
         qty,
         size,
         label: piece.label,
-        unitCents: piece.price * 100,
-        lineCents: piece.price * 100 * qty
+        unitCents: toCents(piece.price),
+        lineCents: toCents(piece.price) * qty
     };
 }
 

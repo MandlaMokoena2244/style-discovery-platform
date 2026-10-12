@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Individual women's pieces styled by FashForge from South African brands.">
+    <meta name="description" content="Individual women's pieces styled by FashForge, sold on their own from the current outfits.">
     <meta property="og:title" content="Women - Individual Pieces | FashForge">
-    <meta property="og:description" content="Individual women's pieces styled by FashForge from South African brands.">
+    <meta property="og:description" content="Individual women's pieces styled by FashForge, sold on their own from the current outfits.">
     <meta property="og:url" content="https://fashforge.co.za/women-individual-pieces.html">
     <meta property="og:type" content="website">
     <link rel="canonical" href="https://fashforge.co.za/women-individual-pieces.html">
@@ -25,6 +25,14 @@
         <li><a href="index.html">Home</a></li>
         <li><a href="women.html">Women</a></li>
     </ul>
+    <button class="cart-btn" id="cart-btn" aria-label="Open cart">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+    </button>
     <div class="hamburger">
         <span></span>
         <span></span>
@@ -41,83 +49,157 @@
     </div>
 </section>
 
-<p class="drops-note">New drops every week — follow us on Instagram <a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">@fashforge_official_account</a></p>
+<p class="drops-note">New drops every week. Follow us on Instagram <a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">@fashforge_official_account</a></p>
 
-<!-- CATEGORY OPTIONS GRID -->
-<section class="style-grid-section">
-    <div class="style-grid">
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Footwear</h3>
-                <p>Sneakers, loafers, boots & dress shoes</p>
-            </div>
-        </div>
+<section class="pieces-intro">
+    <span class="section-label">Available now</span>
+    <h2>Pieces from the women's outfits</h2>
+    <p>Buy a top, pant, or pair of shoes on its own. Each piece links back to its full outfit.</p>
+</section>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Shirts</h3>
-                <p>Formal, casual & oxford shirts</p>
-            </div>
+<section class="items-grid piece-grid" aria-label="Individual pieces">
+    <a href="product-total-diva-tee.html" class="item-card piece-card" data-piece-id="4">
+        <div class="piece-frame">
+            <img src="images/women-piece-total-diva-tee.jpg" alt="Total Diva regular t-shirt with a mint heart graphic">
         </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>Total Diva Regular T-Shirt</h3>
+            <p class="item-price">R899.00</p>
+        </div>
+    </a>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>T-Shirts</h3>
-                <p>Essential tees, polos & long sleeves</p>
-            </div>
+    <a href="product-barbi-pant-tan.html" class="item-card piece-card" data-piece-id="5">
+        <div class="piece-frame">
+            <img src="images/women-piece-barbi-pant-stone.jpg" alt="Tan slim-leg Barbi pants with a turn-up cuff">
         </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: LEGiT</p>
+            <h3>Barbi Pant, tan colour</h3>
+            <p class="item-price">R479.99</p>
+        </div>
+    </a>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Trousers</h3>
-                <p>Chinos, dress pants, jeans & joggers</p>
-            </div>
+    <a href="product-barbi-pant-stone.html" class="item-card piece-card" data-piece-id="5">
+        <div class="piece-frame">
+            <img src="images/women-piece-barbi-pant-stone-ff-w-005.jpg" alt="Stone slim-leg Barbi pants with a turn-up cuff">
         </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: LEGiT</p>
+            <h3>Barbi Pant, stone colour</h3>
+            <p class="item-price">R479.99</p>
+        </div>
+    </a>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1584536453494-aa5c0a12c492?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Underwear</h3>
-                <p>Boxers, briefs & base layers</p>
-            </div>
+    <a href="product-firebird-denim.html" class="item-card piece-card" data-piece-id="6">
+        <div class="piece-frame">
+            <img src="images/women-piece-firebird-denim.jpg" alt="Blue adidas Originals Firebird denim pants">
         </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: adidas Originals</p>
+            <h3>adidas Originals Firebird Denim Pants</h3>
+            <p class="item-price">R2,699.95</p>
+        </div>
+    </a>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1610396060360-c6c9c2f0d0c5?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Sleepwear</h3>
-                <p>Pajamas, robes & loungewear</p>
-            </div>
+    <a href="product-tinley-sneakers.html" class="item-card piece-card sneaker-card" data-piece-id="7">
+        <div class="piece-frame">
+            <img src="images/women-piece-tinley-sneakers.jpg" alt="White Tinley platform sneakers">
         </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>Tinley Sneakers</h3>
+            <p class="item-price">R1,499.00</p>
+        </div>
+    </a>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Jackets & Coats</h3>
-                <p>Blazers, bombers, overcoats & more</p>
-            </div>
+    <a href="product-orange-wrap-top.html" class="item-card piece-card" data-piece-id="8">
+        <div class="piece-frame">
+            <img src="images/women-piece-orange-wrap-top.jpg" alt="Orange linen-look wrap top with decorative buttons">
         </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: LEGiT</p>
+            <h3>Fancy Button Linen Look Wrap Top, orange</h3>
+            <p class="item-price">R419.99</p>
+        </div>
+    </a>
 
-        <div class="style-card reveal coming-soon" aria-disabled="true">
-            <div class="style-card-image" style="background-image: url('https://images.unsplash.com/photo-1611088221960-6e2a3f1f5b1e?w=800');"></div>
-            <div class="style-card-overlay"></div>
-            <div class="style-card-content">
-                <h3>Accessories</h3>
-                <p>Belts, ties, watches, bags & hats</p>
-            </div>
+    <a href="product-orange-culotte.html" class="item-card piece-card" data-piece-id="9">
+        <div class="piece-frame">
+            <img src="images/women-piece-orange-culotte.jpg" alt="Orange linen-look culotte pants">
         </div>
-    </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: LEGiT</p>
+            <h3>Culotte Linen Look Pant, orange</h3>
+            <p class="item-price">R479.99</p>
+        </div>
+    </a>
+
+    <a href="product-aloisa-cardigan.html" class="item-card piece-card" data-piece-id="10">
+        <div class="piece-frame">
+            <img src="images/women-piece-aloisa-cardigan.jpg" alt="Chocolate brown Aloisa knit cardigan">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>Aloisa Knit Cardigan</h3>
+            <p class="item-price">R1,199.00</p>
+        </div>
+    </a>
+
+    <a href="product-aloisa-pants.html" class="item-card piece-card" data-piece-id="11">
+        <div class="piece-frame">
+            <img src="images/women-piece-aloisa-pants.jpg" alt="Chocolate brown Aloisa knit pants">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>Aloisa Knit Pants</h3>
+            <p class="item-price">R1,199.00</p>
+        </div>
+    </a>
+
+    <a href="product-noella-sneakers.html" class="item-card piece-card sneaker-card" data-piece-id="12">
+        <div class="piece-frame">
+            <img src="images/women-piece-noella-sneakers.jpg" alt="White Noella platform sneakers">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>Noella Sneakers</h3>
+            <p class="item-price">R1,200.00</p>
+        </div>
+    </a>
+
+    <a href="product-taupe-knit-top.html" class="item-card piece-card" data-piece-id="13">
+        <div class="piece-frame">
+            <img src="images/women-piece-taupe-knit-top.jpg" alt="Taupe sleeveless double-breasted knit top">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: LEGiT</p>
+            <h3>Sleeveless Double Breasted Knit Top, taupe</h3>
+            <p class="item-price">R429.99</p>
+        </div>
+    </a>
+
+    <a href="product-i-need-you-corset.html" class="item-card piece-card" data-piece-id="14">
+        <div class="piece-frame">
+            <img src="images/women-piece-i-need-you-corset.jpg" alt="Black I Need You corset">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>I Need You Corset</h3>
+            <p class="item-price">R1,899.00</p>
+        </div>
+    </a>
+
+    <a href="product-sadie-jeans.html" class="item-card piece-card" data-piece-id="15">
+        <div class="piece-frame">
+            <img src="images/women-piece-sadie-jeans.jpg" alt="Dark wash Sadie wide leg jeans">
+        </div>
+        <div class="item-info">
+            <p class="item-brand">Brand: Sissy Boy</p>
+            <h3>Sadie Wide Leg Jeans</h3>
+            <p class="item-price">R1,999.00</p>
+        </div>
+    </a>
 </section>
 
 <!-- FOOTER -->

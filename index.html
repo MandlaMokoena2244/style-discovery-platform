@@ -16,7 +16,31 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body> 
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="logo">FashForge</a>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="men.html">Men</a></li>
+            <li><a href="women.html">Women</a></li>
+            <li><a href="kids.html">Kids</a></li>
+            <li><a href="brands.html">Brands</a></li>
+        </ul>
+        <button class="cart-btn" id="cart-btn" aria-label="Open cart">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <path d="M3 6h18"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <span class="cart-count" id="cart-count">0</span>
+        </button>
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </nav>
 
     <!-- Brand Label -->
     <div class="home-brand">
@@ -28,6 +52,7 @@
     <!-- Category Selector -->
     <div class="category-selector">
         <a href="men.html" class="category-square men">
+            <img src="images/home-men.jpg" alt="">
             <div class="category-content">
                 <h2>Men</h2>
                 <div class="category-line"></div>
@@ -35,6 +60,7 @@
             </div>
         </a>
         <a href="women.html" class="category-square women">
+            <img src="images/home-women.jpg" alt="">
             <div class="category-content">
                 <h2>Women</h2>
                 <div class="category-line"></div>
@@ -42,6 +68,7 @@
             </div>
         </a>
         <a href="kids.html" class="category-square kids">
+            <img src="images/home-kids.jpg" alt="">
             <div class="category-content">
                 <h2>Kids</h2>
                 <div class="category-line"></div>
@@ -49,6 +76,7 @@
             </div>
         </a>
         <a href="brands.html" class="category-square brands">
+            <img src="images/home-brands.jpg" alt="">
             <div class="category-content">
                 <h2>Brands</h2>
                 <div class="category-line"></div>
@@ -56,6 +84,56 @@
             </div>
         </a>
     </div>
+
+    <section class="trending-section" aria-labelledby="trending-heading">
+        <div class="pieces-intro">
+            <span class="section-label">Styles</span>
+            <h2 id="trending-heading">Trending styles</h2>
+            <p>Two edits from the current collection.</p>
+        </div>
+        <div class="trending-groups">
+            <div class="trending-group single">
+                <h3 class="trending-style-name"><a href="men-streetwear.html">Men Streetwear</a></h3>
+                <div class="items-grid">
+                    <a href="men-streetwear.html" class="item-card outfit-card">
+                        <span class="item-tag">Men</span>
+                        <img src="images/streetwear1.png" alt="Boxy Top Streetwear Set">
+                        <div class="item-info">
+                            <p class="item-brand">Streetwear</p>
+                            <h3>Boxy Top Streetwear Set</h3>
+                            <p class="item-id">FF-M-001</p>
+                            <p class="item-price">R1,050.00</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="trending-group">
+                <h3 class="trending-style-name"><a href="women-smart-casual.html">Women Smart Casual</a></h3>
+                <div class="items-grid">
+                    <a href="women-smart-casual.html" class="item-card outfit-card">
+                        <span class="item-tag">Women</span>
+                        <img src="images/women-ff-w-003.jpg" alt="Orange Linen Co-ord: orange wrap top and matching culottes">
+                        <div class="item-info">
+                            <p class="item-brand">Smart Casual</p>
+                            <h3>Orange Linen Co-ord</h3>
+                            <p class="item-id">FF-W-003</p>
+                            <p class="item-price">R700.00</p>
+                        </div>
+                    </a>
+                    <a href="women-smart-casual.html" class="item-card outfit-card">
+                        <span class="item-tag">Women</span>
+                        <img src="images/women-ff-w-004.jpg" alt="Chocolate Knit Co-ord: cardigan, knit pants, and sneakers">
+                        <div class="item-info">
+                            <p class="item-brand">Smart Casual</p>
+                            <h3>Chocolate Knit Co-ord</h3>
+                            <p class="item-id">FF-W-004</p>
+                            <p class="item-price">R3,300.00</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <footer class="footer">
         <div class="footer-grid">
@@ -99,5 +177,6 @@
         </div>
     </footer>
 
+    <script src="script.js"></script>
 </body>
 </html>

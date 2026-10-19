@@ -89,19 +89,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // ============================================
 // PAYMENT SWITCH
-// One place to turn card payments on.
-// 'whatsapp' keeps Order on WhatsApp. This is the safe default until
-// the live PayFast account is verified.
+// One place to turn ordering back on.
+// 'disabled' shows a notice and does not take orders. Add to cart still works.
+// 'whatsapp' keeps Order on WhatsApp.
 // 'payfast' replaces that button with the card checkout form.
-// There is no WhatsApp order button while this is 'payfast'.
+// There is no WhatsApp order button while this is 'payfast' or 'disabled'.
 // The contact form is a Netlify Form and does not follow this switch.
+// WhatsApp on the contact page is for queries only.
 // ============================================
-const PAYMENT_PROVIDER = 'whatsapp';
+const PAYMENT_PROVIDER = 'disabled';
+const ORDERS_PAUSED_NOTICE = 'Online payments are not available yet. Our store is not taking orders for now, please check back soon.';
 
 function activePaymentProvider() {
     if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
+    if (PAYMENT_PROVIDER === 'disabled') return 'disabled';
     if (PAYMENT_PROVIDER !== 'whatsapp') {
-        console.warn('PAYMENT_PROVIDER must be whatsapp or payfast. Staying on WhatsApp.');
+        console.warn('PAYMENT_PROVIDER must be disabled, whatsapp, or payfast. Staying on WhatsApp.');
     }
     return 'whatsapp';
 }
@@ -153,12 +156,10 @@ const SINGLE_PIECE_IDS = {
     'Barbi Pant, stone colour': 5,
     'adidas Originals Firebird Denim Pants': 6,
     'Tinley Sneakers': 7,
-    'Fancy Button Linen Look Wrap Top, orange': 8,
     'Culotte Linen Look Pant, orange': 9,
     'Aloisa Knit Cardigan': 10,
     'Aloisa Knit Pants': 11,
     'Noella Sneakers': 12,
-    'Sleeveless Double Breasted Knit Top, taupe': 13,
     'I Need You Corset': 14,
     'Sadie Wide Leg Jeans': 15
 };
@@ -282,7 +283,9 @@ document.addEventListener('DOMContentLoaded', function() {
         jeans: 'Jeans'
     };
 
-    const payfastOn = activePaymentProvider() === 'payfast';
+    const paymentProvider = activePaymentProvider();
+    const payfastOn = paymentProvider === 'payfast';
+    const ordersDisabled = paymentProvider === 'disabled';
 
     function checkoutFormHtml() {
         const provinces = [
@@ -345,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ---- Inject cart drawer + overlay into the page ----
     document.body.insertAdjacentHTML('beforeend', `
         <div class="cart-overlay" id="cart-overlay"></div>
-        <aside class="cart-drawer${payfastOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${payfastOn ? 'payfast' : 'whatsapp'}">
+        <aside class="cart-drawer${payfastOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${paymentProvider}">
             <div class="cart-drawer-header">
                 <h3>Your Cart</h3>
                 <button class="cart-close" id="cart-close" aria-label="Close cart">&times;</button>
@@ -361,7 +364,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <strong id="cart-total">R0.00</strong>
                 </div>
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
-                <button class="btn-checkout" id="checkout-btn" type="${payfastOn ? 'submit' : 'button'}"${payfastOn ? ' form="checkout-form"' : ''}>${payfastOn ? 'Pay by card' : 'Order on WhatsApp'}</button>
+                ${ordersDisabled
+                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p>'
+                    : '<button class="btn-checkout" id="checkout-btn" type="' + (payfastOn ? 'submit' : 'button') + '"' + (payfastOn ? ' form="checkout-form"' : '') + '>' + (payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
         </aside>
@@ -504,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function checkoutOnWhatsApp() {
+        if (activePaymentProvider() !== 'whatsapp') return;
         if (cart.length === 0) {
             alert('Your cart is empty.');
             return;
@@ -601,6 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
             errorEl.hidden = false;
             errorEl.textContent = message;
         }
+        if (activePaymentProvider() !== 'payfast') return;
         if (payfastSubmitting) return;
         errorEl.hidden = true;
         errorEl.textContent = '';
@@ -665,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             submitPayfastCheckout();
         });
-    } else {
+    } else if (checkoutBtn && activePaymentProvider() === 'whatsapp') {
         // Checkout -> WhatsApp order. Cart is cleared only after WhatsApp opens.
         checkoutBtn.addEventListener('click', checkoutOnWhatsApp);
     }

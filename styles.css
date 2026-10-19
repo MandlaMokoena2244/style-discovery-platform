@@ -1488,6 +1488,16 @@ h1, h2, h3, h4 {
     transition: var(--transition);
 }
 .btn-checkout:hover { background: var(--accent); }
+.orders-paused {
+    margin: 0;
+    padding: 0.95rem 1rem;
+    background: var(--secondary);
+    border: 1px solid #e4ddd4;
+    color: var(--text-dark);
+    font-size: 0.85rem;
+    line-height: 1.6;
+    text-align: left;
+}
 
 /* --- Responsive --- */
 @media (max-width: 900px) {

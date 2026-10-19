@@ -102,12 +102,10 @@ const PIECES = {
     'Barbi Pant, stone colour': { code: 'W-BARBI-STONE', price: 479.99, label: 'Pants', stockId: 5 },
     'adidas Originals Firebird Denim Pants': { code: 'W-DENIM', price: 2699.95, label: 'Pants', stockId: 6 },
     'Tinley Sneakers': { code: 'W-TINLEY', price: 1499, label: 'Sneaker', stockId: 7 },
-    'Fancy Button Linen Look Wrap Top, orange': { code: 'W-WRAP', price: 419.99, label: 'Top', stockId: 8 },
     'Culotte Linen Look Pant, orange': { code: 'W-CULOTTE', price: 479.99, label: 'Pants', stockId: 9 },
     'Aloisa Knit Cardigan': { code: 'W-CARDIGAN', price: 1199, label: 'Cardigan', stockId: 10 },
     'Aloisa Knit Pants': { code: 'W-KNITPANT', price: 1199, label: 'Pants', stockId: 11 },
     'Noella Sneakers': { code: 'W-NOELLA', price: 1200, label: 'Sneaker', stockId: 12 },
-    'Sleeveless Double Breasted Knit Top, taupe': { code: 'W-KNITTOP', price: 429.99, label: 'Top', stockId: 13 },
     'I Need You Corset': { code: 'W-CORSET', price: 1899, label: 'Corset', stockId: 14 },
     'Sadie Wide Leg Jeans': { code: 'W-JEANS', price: 1999, label: 'Jeans', stockId: 15 }
 };

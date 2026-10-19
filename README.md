@@ -51,19 +51,22 @@ Style pages:
 
 The set price is for the full outfit. Piece names are listed on the outfit page. Brand names are plain text. Brand product URLs and piece prices are not on the site.
 
+The Fancy Button Linen Look Wrap Top (piece id 8) stays inside Orange Linen Co-ord, FF-W-003. The Sleeveless Double Breasted Knit Top (piece id 13) stays inside Taupe Waistcoat Set, FF-W-005. Those two tops are not listed under Women, Individual Pieces and they have no standalone product page.
+
 In-stock sizes come from `PIECE_STOCK` in `script.js`, keyed by piece id. Each size group sets `data-piece-id` and is left empty. Only sizes in stock are shown. A piece with one size is preselected. The next free women's number is FF-W-007.
 
 A piece is sold out when its size list is empty (`sizes: []` in `PIECE_STOCK`, and `[]` for the same id in `netlify/lib/catalogue.js`). There is no separate sold-out flag. The size row says Sold out, Add to Cart is disabled, and the whole outfit cannot be bought while any piece is missing. Listing cards with `data-outfit-id` or `data-piece-id` show a Sold out badge from `OUTFIT_PIECE_IDS` and `SINGLE_PIECE_IDS` in `script.js`. WhatsApp and card checkout both refuse a cart that still has the piece. To restock, put the sizes back in both lists.
 
 ## Card payments (PayFast)
 
-Orders still go out on WhatsApp until you flip one switch. In `script.js`:
+Ordering is paused until you change one switch. In `script.js`:
 
 ```js
-const PAYMENT_PROVIDER = 'whatsapp'; // change to 'payfast' when card payments should go live
+const PAYMENT_PROVIDER = 'disabled'; // 'whatsapp' or 'payfast' when the store should take orders again
 ```
 
-- `whatsapp` (the default): the cart keeps the Order on WhatsApp button. Merging this does not turn card payments on.
+- `disabled` (current): the cart shows a notice in place of the checkout button and does not take orders. Add to cart still works. There is no WhatsApp order button and no card form.
+- `whatsapp`: the cart shows Order on WhatsApp.
 - `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Netlify Forms and does not follow this switch. WhatsApp on the contact page is for queries.
 
 The amount charged is the item total from `netlify/lib/catalogue.js`. The shop says "Free delivery on orders over R4,000" and does not state a delivery fee, so no delivery fee is added either way. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
@@ -105,7 +108,7 @@ Older docs also show merchant `10000100` / key `46f0cd694581a` with passphrase `
 ### Owner checklist
 
 1. In Netlify, open Site configuration, then Environment variables. Add the variables above for the production site. For a preview test, set `SITE_URL` to that preview origin so the return and notify URLs match it.
-2. Create your own merchant on the PayFast sandbox. Put that merchant id, key, and passphrase in the Netlify variables with `PAYFAST_MODE=sandbox`. Deploy. The live site still shows Order on WhatsApp.
+2. Create your own merchant on the PayFast sandbox. Put that merchant id, key, and passphrase in the Netlify variables with `PAYFAST_MODE=sandbox`. Deploy. The live site still shows the orders-paused notice until you change `PAYMENT_PROVIDER`.
 3. To try the card form, change `PAYMENT_PROVIDER` to `payfast` on a preview branch (do not do this on main until you mean to). Add an item, fill in the delivery form, and finish the test payment on the PayFast sandbox page. You should land on `payment-success.html`. In Netlify, open the `payfast-notify` function log and confirm the paid order. If the Google variables are set, check the Orders tab.
 4. When the live PayFast account is verified, set `PAYFAST_MODE=live` and replace the merchant id, key, and passphrase with the live values. Set `SITE_URL` to `https://fashforge.co.za`.
 5. Change `PAYMENT_PROVIDER` to `payfast` and deploy. The cart then takes card payment only.

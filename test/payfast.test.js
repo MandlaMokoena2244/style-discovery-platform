@@ -113,12 +113,10 @@ test('server catalogue matches the product pages and in-stock sizes', () => {
         ['product-barbi-pant-stone.html', 'Barbi Pant, stone colour', '479.99'],
         ['product-firebird-denim.html', 'adidas Originals Firebird Denim Pants', '2699.95'],
         ['product-tinley-sneakers.html', 'Tinley Sneakers', '1499'],
-        ['product-orange-wrap-top.html', 'Fancy Button Linen Look Wrap Top, orange', '419.99'],
         ['product-orange-culotte.html', 'Culotte Linen Look Pant, orange', '479.99'],
         ['product-aloisa-cardigan.html', 'Aloisa Knit Cardigan', '1199'],
         ['product-aloisa-pants.html', 'Aloisa Knit Pants', '1199'],
         ['product-noella-sneakers.html', 'Noella Sneakers', '1200'],
-        ['product-taupe-knit-top.html', 'Sleeveless Double Breasted Knit Top, taupe', '429.99'],
         ['product-i-need-you-corset.html', 'I Need You Corset', '1899'],
         ['product-sadie-jeans.html', 'Sadie Wide Leg Jeans', '1999']
     ];
@@ -591,12 +589,87 @@ test('recordOrder logs without Google Sheets and does not throw when Sheets is m
     ]);
 });
 
-test('the payment switch defaults to WhatsApp, and result pages stay out of the sitemap', () => {
+test('removed tops are not sold alone, and their outfits still check out', async () => {
+    for (const name of [
+        'Fancy Button Linen Look Wrap Top, orange',
+        'Sleeveless Double Breasted Knit Top, taupe'
+    ]) {
+        const response = await handleCheckout({
+            httpMethod: 'POST',
+            body: JSON.stringify({
+                customer: customer(),
+                items: [{ name, qty: 1, size: 'XXS' }]
+            })
+        }, { env: ENV });
+        assert.equal(response.statusCode, 400);
+        assert.equal(JSON.parse(response.body).error, 'An item in the cart is no longer available.');
+    }
+
+    const orange = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [outfitItem('FF-W-003', { top: 'XXS', pants: 'XS' })]
+        })
+    }, {
+        env: ENV,
+        now: new Date('2026-10-19T12:00:00Z'),
+        randomInt: () => 0
+    });
+    assert.equal(orange.statusCode, 200);
+    assert.equal(JSON.parse(orange.body).amount, '700.00');
+
+    const taupe = await handleCheckout({
+        httpMethod: 'POST',
+        body: JSON.stringify({
+            customer: customer(),
+            items: [outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' })]
+        })
+    }, { env: ENV });
+    assert.equal(taupe.statusCode, 200);
+    assert.equal(JSON.parse(taupe.body).amount, '700.00');
+
+    assert.equal(fs.existsSync(path.join(ROOT, 'product-orange-wrap-top.html')), false);
+    assert.equal(fs.existsSync(path.join(ROOT, 'product-taupe-knit-top.html')), false);
+    const listing = fs.readFileSync(path.join(ROOT, 'women-individual-pieces.html'), 'utf8');
+    assert.equal(listing.includes('product-orange-wrap-top.html'), false);
+    assert.equal(listing.includes('product-taupe-knit-top.html'), false);
+    assert.equal(listing.includes('Fancy Button Linen Look Wrap Top'), false);
+    assert.equal(listing.includes('Sleeveless Double Breasted Knit Top'), false);
+    const orangePage = fs.readFileSync(path.join(ROOT, 'product-orange-linen-coord.html'), 'utf8');
+    const taupePage = fs.readFileSync(path.join(ROOT, 'product-taupe-waistcoat-set.html'), 'utf8');
+    assert.match(orangePage, /data-outfit-id="FF-W-003"/);
+    assert.match(orangePage, /data-piece-id="8"/);
+    assert.equal(orangePage.includes('product-orange-wrap-top.html'), false);
+    assert.match(orangePage, /href="product-orange-culotte.html"/);
+    assert.match(taupePage, /data-outfit-id="FF-W-005"/);
+    assert.match(taupePage, /data-piece-id="13"/);
+    assert.equal(taupePage.includes('product-taupe-knit-top.html'), false);
+    assert.match(taupePage, /href="product-barbi-pant-stone.html"/);
+    const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+    assert.equal(sitemap.includes('product-orange-wrap-top'), false);
+    assert.equal(sitemap.includes('product-taupe-knit-top'), false);
+});
+
+test('the payment switch pauses orders, and result pages stay out of the sitemap', () => {
     const script = fs.readFileSync(path.join(ROOT, 'script.js'), 'utf8');
-    assert.match(script, /const PAYMENT_PROVIDER = 'whatsapp';/);
+    assert.match(script, /const PAYMENT_PROVIDER = 'disabled';/);
+    const providerStart = script.indexOf('const PAYMENT_PROVIDER');
+    const providerEnd = script.indexOf('const PIECE_STOCK');
+    const provider = Function(script.slice(providerStart, providerEnd) + '\nreturn activePaymentProvider();')();
+    assert.equal(provider, 'disabled');
+    assert.match(script, /Online payments are not available yet\. Our store is not taking orders for now, please check back soon\./);
     assert.match(script, /Order on WhatsApp/);
     assert.match(script, /Pay by card/);
     assert.match(script, /Free delivery on orders over R4,000\./);
+    assert.equal(script.includes('https://wa.me/27672565980?text='), true);
+    for (const file of fs.readdirSync(ROOT)) {
+        if (!file.endsWith('.html')) continue;
+        const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
+        assert.equal(html.includes('wa.me/27672565980?text='), false, file);
+        assert.equal(html.includes('Order on WhatsApp'), false, file);
+        assert.equal(html.includes('order on WhatsApp'), false, file);
+    }
     const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
     assert.equal(sitemap.includes('payment-success'), false);
     assert.equal(sitemap.includes('payment-cancelled'), false);

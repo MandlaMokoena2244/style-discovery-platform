@@ -1,0 +1,13 @@
+# Temporary close. Delete this file to relaunch the full site.
+# Asset rules come first so the coming-soon page can still load its logo mark and favicon.
+# A request is handled by the first matching rule.
+/favicon.svg       /favicon.svg       200
+/coming-soon.html  /coming-soon.html  200
+
+# Netlify serves an existing file instead of a plain 200 rewrite, so the catch-all
+# has to be forced (200!) or the live pages stay up. Cloudflare Pages rejects 200!
+# and ignores that line; the plain 200 rule under it is the one Pages uses.
+# Pages also strips .html and would loop on a rewrite to /coming-soon.html, so the
+# Pages rule targets /coming-soon, which resolves to this same file.
+/*  /coming-soon.html  200!
+/*  /coming-soon       200

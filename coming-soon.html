@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FashForge | Coming Soon</title>
+    <meta name="description" content="FashForge is coming soon. Complete outfits from South African brands.">
+    <meta name="robots" content="noindex">
+    <meta property="og:title" content="FashForge | Coming Soon">
+    <meta property="og:description" content="We're putting the finishing touches on complete outfits from South African brands.">
+    <meta property="og:url" content="https://fashforge.co.za/">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="https://fashforge.co.za/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --ink: #1a1a1a;
+            --text: #2c2c2c;
+            --muted: #6f6a64;
+            --cream: #f5f0eb;
+            --gold: #c9a96e;
+            --white: #ffffff;
+            --bar: #111111;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; }
+
+        body {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.6;
+        }
+
+        .bar {
+            display: flex;
+            align-items: center;
+            height: 4.5rem;
+            padding: 0 5%;
+            background: var(--bar);
+            box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .logo {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--white);
+            line-height: 1;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem 4rem;
+            background: var(--cream);
+        }
+
+        .panel {
+            width: min(100%, 34rem);
+            text-align: center;
+        }
+
+        .mark {
+            width: 2.75rem;
+            height: 2.75rem;
+            margin: 0 auto 1.5rem;
+        }
+
+        h1 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-weight: 400;
+            font-size: clamp(2.4rem, 8vw, 3.5rem);
+            letter-spacing: 0.04em;
+            line-height: 1.15;
+            color: var(--ink);
+        }
+
+        .rule {
+            width: 3rem;
+            height: 1px;
+            margin: 1.35rem auto 1.35rem;
+            border: 0;
+            background: var(--gold);
+        }
+
+        .lead {
+            font-size: 1.05rem;
+            color: var(--muted);
+            max-width: 28rem;
+            margin: 0 auto;
+        }
+
+        .links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .links a {
+            color: var(--ink);
+            font-size: 0.78rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-bottom: 1px solid var(--gold);
+            padding: 0.65rem 0.15rem 0.35rem;
+            min-height: 44px;
+        }
+
+        .links a:hover,
+        .links a:focus-visible {
+            color: #8c7344;
+        }
+
+        .links a:focus-visible {
+            outline: 2px solid var(--gold);
+            outline-offset: 4px;
+        }
+
+        @media (max-width: 480px) {
+            .logo { font-size: 1.45rem; letter-spacing: 2px; }
+            .bar { height: 4rem; }
+            main { padding: 2.5rem 1.25rem 3rem; }
+            .lead { font-size: 1rem; }
+            .links { flex-direction: column; align-items: center; gap: 0.25rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="bar">
+        <p class="logo">FashForge</p>
+    </header>
+    <main>
+        <div class="panel">
+            <img class="mark" src="/favicon.svg" width="44" height="44" alt="">
+            <h1>Coming soon</h1>
+            <hr class="rule">
+            <p class="lead">We're putting the finishing touches on complete outfits from South African brands.</p>
+            <nav class="links" aria-label="Contact">
+                <a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">Instagram</a>
+                <a href="https://wa.me/27672565980" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            </nav>
+        </div>
+    </main>
+</body>
+</html>

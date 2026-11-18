@@ -20,10 +20,20 @@ window.FASHFORGE = {
         locker: 70,
         freeFrom: 2000,
         lockerProvider: 'Courier Guy',
-        lockerHours: 36
+        lockerHours: 36,
+        usualBusinessDays: [3, 7],
+        packDays: [1, 2],
+        courierDays: [1, 3]
     },
     formatZar: formatZar,
+    dayRange: function (pair) {
+        return pair[0] + '\u2013' + pair[1];
+    },
     freeDeliveryLine: function () {
         return 'Free delivery on orders of ' + formatZar(window.FASHFORGE.delivery.freeFrom) + ' or more.';
+    },
+    deliveryWindowLine: function () {
+        const days = window.FASHFORGE.delivery.usualBusinessDays;
+        return 'Delivery usually takes ' + window.FASHFORGE.dayRange(days) + ' business days.';
     }
 };

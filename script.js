@@ -34,6 +34,19 @@ function applySiteDetails() {
     document.querySelectorAll('[data-site-locker-provider]').forEach(function(el) {
         el.textContent = site.delivery.lockerProvider;
     });
+    if (typeof site.deliveryWindowLine === 'function') {
+        document.querySelectorAll('[data-site-delivery-window]').forEach(function(el) {
+            el.textContent = site.deliveryWindowLine();
+        });
+    }
+    if (typeof site.dayRange === 'function') {
+        document.querySelectorAll('[data-site-pack-days]').forEach(function(el) {
+            el.textContent = site.dayRange(site.delivery.packDays);
+        });
+        document.querySelectorAll('[data-site-courier-days]').forEach(function(el) {
+            el.textContent = site.dayRange(site.delivery.courierDays);
+        });
+    }
 }
 
 function deliveryChoiceLabel(value) {
@@ -56,7 +69,7 @@ function insertDeliveryChoice(button) {
         '<legend>Delivery</legend>' +
         '<label><input type="radio" name="delivery-method" value="door"> Door-to-door, ' + zar(delivery.doorToDoor) + '</label>' +
         '<label><input type="radio" name="delivery-method" value="locker"> ' + delivery.lockerProvider + ' locker, ' + zar(delivery.locker) + '. Collect with a PIN within ' + delivery.lockerHours + ' hours.</label>' +
-        '<p>' + window.FASHFORGE.freeDeliveryLine() + '</p>';
+        '<p>' + window.FASHFORGE.freeDeliveryLine() + ' ' + window.FASHFORGE.deliveryWindowLine() + '</p>';
     button.insertAdjacentElement('beforebegin', field);
 }
 

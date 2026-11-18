@@ -679,6 +679,10 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     assert.match(siteConfig, /doorToDoor: 99/);
     assert.match(siteConfig, /locker: 70/);
     assert.match(siteConfig, /freeFrom: 2000/);
+    assert.match(siteConfig, /usualBusinessDays: \[3, 7\]/);
+    assert.match(siteConfig, /packDays: \[1, 2\]/);
+    assert.match(siteConfig, /courierDays: \[1, 3\]/);
+    assert.equal(fs.readFileSync(path.join(ROOT, 'delivery-policy.html'), 'utf8').includes('TODO(Mandla): confirm a typical delivery window'), false);
     assert.equal(script.includes('https://wa.me/27672565980?text='), true);
     for (const file of fs.readdirSync(ROOT)) {
         if (!file.endsWith('.html')) continue;

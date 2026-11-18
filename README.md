@@ -21,8 +21,12 @@ Items already in a cart with no `id`, or with an older id that is not this forma
 
 ### Adding a new outfit
 
+Products and outfits live in `products.json`. Listing pages render from that file. To add a product, add one object under `products`. To add an outfit, add one object under `outfits` and list its product ids. Set `page` to an existing product HTML file, or leave it empty and the generic `product.html?id=` page is used.
+
+Leave `paymentLink` empty until a Stitch Express link exists. The public email address is `email` in `site-config.js`.
+
 1. Take the next free number for that department (`FF-M-002`, `FF-W-007`, `FF-K-001`, and so on). Women's `FF-W-001` to `FF-W-006` are already in use.
-2. Put that ID on the product's Add to Cart button (and on its listing card), for example `data-outfit-id="FF-W-007"`.
+2. Put that ID on the outfit in `products.json`, and on the product page button as `data-outfit-id` if the page is hand-built.
 3. Leave brand product URLs, source links, and supplier details out of the site. Those stay in the private Google Sheet, keyed by the outfit ID.
 
 ### Adding a product details block
@@ -65,7 +69,7 @@ Ordering is paused until you change one switch. In `script.js`:
 const PAYMENT_PROVIDER = 'disabled'; // 'whatsapp' or 'payfast' when the store should take orders again
 ```
 
-- `disabled` (current): the cart shows a notice in place of the checkout button and does not take orders. Add to cart still works. There is no WhatsApp order button and no card form.
+- `disabled` (current): the cart does not take card or cart checkout. On a product page, Buy opens `paymentLink` when one is set in `products.json`. Otherwise the button sends an order on WhatsApp with the product name and size. Card checkout stays off.
 - `whatsapp`: the cart shows Order on WhatsApp.
 - `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Netlify Forms and does not follow this switch. WhatsApp on the contact page is for queries.
 

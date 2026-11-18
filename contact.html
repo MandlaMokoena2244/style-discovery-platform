@@ -8,8 +8,16 @@
     <meta property="og:description" content="Contact FashForge with the form on this page, on WhatsApp at +27 67 256 5980, or on Instagram @fashforge_official_account.">
     <meta property="og:url" content="https://fashforge.co.za/contact.html">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
+    <meta property="og:image:alt" content="FashForge">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact | FashForge">
+    <meta name="twitter:description" content="Contact FashForge with the form on this page, on WhatsApp at +27 67 256 5980, or on Instagram @fashforge_official_account.">
+    <meta name="twitter:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
     <link rel="canonical" href="https://fashforge.co.za/contact.html">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <title>Contact | FashForge</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +27,7 @@
 <body>
 
     <nav class="navbar scrolled">
-        <a href="index.html" class="logo">FashForge</a>
+        <a href="index.html" class="logo"><img src="images/logo-mark-white.png" alt="FashForge"></a>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
         </ul>
@@ -54,6 +62,16 @@
         <div class="contact-grid">
             <div class="contact-info reveal">
                 <h3>Contact Information</h3>
+
+                <div class="contact-detail">
+                    <h4>Email</h4>
+                    <p><a data-site-email href="mailto:fashforge@gmail.com">fashforge@gmail.com</a></p>
+                </div>
+
+                <div class="contact-detail">
+                    <h4>Studio</h4>
+                    <p data-site-address>1064 Cornelius Street, Weltevredenpark, Roodepoort, Gauteng, 1709</p>
+                </div>
 
                 <div class="contact-detail">
                     <h4>WhatsApp</h4>
@@ -111,7 +129,7 @@
     <footer class="footer">
         <div class="footer-grid">
             <div class="footer-brand">
-                <h3>FashForge</h3>
+                <a href="index.html" class="footer-logo"><img src="images/logo-full-white.png" alt="FashForge"></a>
                 <p>South African outfit styling. Complete looks from South African brands, with new men's and women's looks every week.</p>
             </div>
             <div class="footer-col">
@@ -134,8 +152,9 @@
                 <h4>Policies</h4>
                 <ul>
                     <li><a href="terms-and-conditions.html">Terms and Conditions</a></li>
-                    <li><a href="refunds-and-cancellations.html">Refunds and Cancellations</a></li>
-                    <li><a href="delivery-policy.html">Delivery Policy</a></li>
+                    <li><a href="refunds-and-cancellations.html">Returns</a></li>
+                    <li><a href="delivery-policy.html">Shipping</a></li>
+                    <li><a href="privacy.html">Privacy</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -146,10 +165,15 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 FashForge</p>
+            <p>&copy; 2026 <span data-site-legal>FashForge (Pty) Ltd</span></p>
+            <p>Registration number <span data-site-reg>2026/919971/07</span></p>
+            <p><span data-site-address>1064 Cornelius Street, Weltevredenpark, Roodepoort, Gauteng, 1709</span></p>
+            <p>Email <a data-site-email href="mailto:fashforge@gmail.com">fashforge@gmail.com</a></p>
         </div>
     </footer>
 
+    <script src="site-config.js"></script>
+    <script src="catalogue-ui.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

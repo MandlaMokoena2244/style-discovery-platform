@@ -341,11 +341,24 @@ test('an empty size list means sold out, including a cart that already holds the
     const evening = fs.readFileSync(path.join(ROOT, 'women-evening.html'), 'utf8');
     const full = fs.readFileSync(path.join(ROOT, 'women-full-outfits.html'), 'utf8');
     const men = fs.readFileSync(path.join(ROOT, 'men-individual-pieces.html'), 'utf8');
-    assert.match(evening, /class="item-card outfit-card reveal" data-outfit-id="FF-W-006"/);
-    assert.match(full, /data-outfit-id="FF-W-006"/);
-    assert.match(men, /data-piece-id="1"/);
-    assert.match(men, /data-piece-id="2"/);
-    assert.match(men, /data-piece-id="3"/);
+    const ui = fs.readFileSync(path.join(ROOT, 'catalogue-ui.js'), 'utf8');
+    const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'products.json'), 'utf8'));
+    assert.match(evening, /data-catalogue-grid[^>]*data-style="evening"/);
+    assert.match(full, /data-catalogue-styles[^>]*data-gender="women"/);
+    assert.match(men, /data-catalogue-grid[^>]*data-kind="piece"[^>]*data-gender="men"/);
+    assert.match(ui, /data-outfit-id/);
+    assert.match(ui, /data-piece-id/);
+    const night = data.outfits.find(function(outfit) { return outfit.id === 'FF-W-006'; });
+    assert.equal(night.style, 'evening');
+    assert.equal(night.gender, 'women');
+    assert.equal(night.inStock, false);
+    assert.deepEqual(night.productIds.slice(0, 3), ['i-need-you-corset', 'sadie-jeans', 'clause-boots']);
+    ['boxy-top', 'graphic-jogger', 'skater-sneaker'].forEach(function(id, index) {
+        const piece = data.products.find(function(product) { return product.id === id; });
+        assert.equal(piece.sellAlone, true);
+        assert.equal(piece.stockId, index + 1);
+        assert.equal(piece.category, 'men');
+    });
 });
 
 test('unknown outfits, bad sizes, and missing config are rejected', async () => {
@@ -658,7 +671,7 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     const providerEnd = script.indexOf('const PIECE_STOCK');
     const provider = Function(script.slice(providerStart, providerEnd) + '\nreturn activePaymentProvider();')();
     assert.equal(provider, 'disabled');
-    assert.match(script, /Online payments are not available yet\. Our store is not taking orders for now, please check back soon\./);
+    assert.match(script, /Card payments are not available yet\. To place an order, use the button on the product page\./);
     assert.match(script, /Order on WhatsApp/);
     assert.match(script, /Pay by card/);
     assert.match(script, /Free delivery on orders over R4,000\./);

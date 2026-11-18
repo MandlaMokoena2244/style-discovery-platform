@@ -61,6 +61,13 @@ h1, h2, h3, h4 {
     letter-spacing: 3px;
     color: var(--white);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+.logo img {
+    height: 2.35rem;
+    width: auto;
+    display: block;
 }
 .navbar.scrolled .logo { color: var(--white); }
 
@@ -225,6 +232,12 @@ h1, h2, h3, h4 {
     letter-spacing: 8px;
     font-weight: 600;
     text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+.home-brand h1 img {
+    height: 6.75rem;
+    width: auto;
+    margin: 0 auto;
+    filter: drop-shadow(0 2px 16px rgba(0,0,0,0.45));
 }
 
 .home-brand span {
@@ -632,6 +645,15 @@ h1, h2, h3, h4 {
     margin-bottom: 1rem;
     letter-spacing: 3px;
 }
+.footer-logo {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+.footer-logo img {
+    height: 4.6rem;
+    width: auto;
+    display: block;
+}
 .footer-brand p {
     color: rgba(255,255,255,0.6);
     line-height: 1.8;
@@ -656,6 +678,31 @@ h1, h2, h3, h4 {
 }
 .footer-col a:hover {
     color: var(--accent);
+}
+.footer-bottom p + p {
+    margin-top: 0.35rem;
+}
+.catalogue-empty,
+.product-missing {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3.5rem 1.25rem 4.5rem;
+}
+.catalogue-empty h2,
+.product-missing h1 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    margin-bottom: 0.75rem;
+}
+.catalogue-empty p,
+.product-missing p {
+    color: var(--text-light);
+    max-width: 32rem;
+    margin: 0.4rem auto 0;
+}
+.item-card picture,
+.product-image-col picture,
+.piece-frame picture {
+    display: block;
 }
 .footer-bottom {
     border-top: 1px solid rgba(255,255,255,0.1);
@@ -1267,7 +1314,7 @@ h1, h2, h3, h4 {
     font-family: var(--font-body);
     font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 1.5px;
     cursor: pointer;
     transition: var(--transition);
     margin-bottom: 0.5rem;

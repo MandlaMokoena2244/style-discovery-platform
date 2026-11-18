@@ -2,7 +2,26 @@
 // FashForge - Main JavaScript
 // ============================================
 
+function applySiteDetails() {
+    const site = window.FASHFORGE;
+    if (!site) return;
+    document.querySelectorAll('[data-site-email]').forEach(function(el) {
+        el.textContent = site.email;
+        if (el.tagName === 'A') el.setAttribute('href', 'mailto:' + site.email);
+    });
+    document.querySelectorAll('[data-site-legal]').forEach(function(el) {
+        el.textContent = site.legalName;
+    });
+    document.querySelectorAll('[data-site-reg]').forEach(function(el) {
+        el.textContent = site.registration;
+    });
+    document.querySelectorAll('[data-site-address]').forEach(function(el) {
+        el.textContent = site.addressLine;
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    applySiteDetails();
 
     // Navbar scroll effect
     const navbar = document.querySelector('.navbar');
@@ -98,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // WhatsApp on the contact page is for queries only.
 // ============================================
 const PAYMENT_PROVIDER = 'disabled';
-const ORDERS_PAUSED_NOTICE = 'Online payments are not available yet. Our store is not taking orders for now, please check back soon.';
+const ORDERS_PAUSED_NOTICE = 'Card payments are not available yet. To place an order, use the button on the product page.';
 
 function activePaymentProvider() {
     if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
@@ -203,7 +222,18 @@ function soldOutCartMessage(items) {
     return 'Some items are sold out. Remove them from your cart.';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+
+    let catalogue = null;
+    try {
+        const response = await fetch('products.json');
+        if (response.ok) catalogue = await response.json();
+    } catch (err) {
+        catalogue = null;
+    }
+    if (catalogue && window.renderFashforgeCatalogue) {
+        window.renderFashforgeCatalogue(catalogue);
+    }
 
     function formatRand(amount) {
         return 'R' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -242,6 +272,13 @@ document.addEventListener('DOMContentLoaded', function() {
             soldOutBtn.textContent = 'Sold out';
             soldOutBtn.setAttribute('aria-disabled', 'true');
         }
+    }
+
+    const buyButton = document.getElementById('add-to-cart');
+    if (buyButton && !buyButton.disabled) {
+        const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, buyButton) : null;
+        const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
+        buyButton.textContent = paymentLink ? 'Buy' : 'Order on WhatsApp';
     }
 
     function placeSoldOutBadge(card) {
@@ -703,7 +740,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
-        const defaultLabel = addBtn.innerHTML;
         const pieceLabels = {
             top: 'Boxy top',
             jogger: 'Black wide leg graphic jogger',
@@ -728,30 +764,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const outfitId = (addBtn.getAttribute('data-outfit-id') || '').trim();
-            const price = Number(addBtn.dataset.price || 1050);
-            const product = {
-                name: addBtn.dataset.name || 'Boxy Top Streetwear Set',
-                brand: addBtn.dataset.brand || 'THE FIX',
-                price: price,
-                qty: parseInt(qtyInput.value, 10)
-            };
-            // A single piece stores one size. The full set stores a size per piece.
-            if (addBtn.dataset.singleSize === 'true') {
-                product.size = Object.values(sizes)[0] || '';
-            } else {
-                product.sizes = sizes; // e.g. { top: 'M', jogger: 'L', shoe: '9' }
+            const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, addBtn) : null;
+            const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
+            // TODO(Mandla): a Stitch Express paymentLink does not receive the chosen size yet.
+            if (paymentLink) {
+                window.location.assign(paymentLink);
+                return;
             }
-            // Only store a real outfit ID. Missing or legacy ids must not block checkout.
-            if (OUTFIT_ID_RE.test(outfitId)) product.id = outfitId;
-            addToCart(product);
 
-            addBtn.textContent = 'Added to Cart \u2713';
-            addBtn.classList.add('added');
-            setTimeout(() => {
-                addBtn.innerHTML = defaultLabel;
-                addBtn.classList.remove('added');
-            }, 2000);
+            const parts = [];
+            document.querySelectorAll('.size-group').forEach(group => {
+                const selected = group.querySelector('.size-btn.selected');
+                if (!selected) return;
+                const label = PIECE_LABELS[group.dataset.piece] || group.dataset.label || 'Size';
+                parts.push(label + ' ' + selected.dataset.size);
+            });
+            const name = addBtn.dataset.name || 'this piece';
+            const sizeText = parts.join(', ');
+            const message = "Hi FashForge, I'd like to order " + name + (sizeText ? ' (' + sizeText + ')' : '') + '.';
+            const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
+            const opened = window.open(url, '_blank', 'noopener');
+            if (!opened) {
+                alert('Allow pop-ups to open WhatsApp, or message us on +27 67 256 5980.');
+            }
         });
     }
 

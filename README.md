@@ -73,7 +73,7 @@ const PAYMENT_PROVIDER = 'disabled'; // 'whatsapp' or 'payfast' when the store s
 - `whatsapp`: the cart shows Order on WhatsApp.
 - `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Netlify Forms and does not follow this switch. WhatsApp on the contact page is for queries.
 
-The amount charged is the item total from `netlify/lib/catalogue.js`. The shop says "Free delivery on orders over R4,000" and does not state a delivery fee, so no delivery fee is added either way. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
+Door-to-door delivery is R99 and a Courier Guy locker is R70. Delivery is free on orders of R2,000 or more. Those amounts live in `site-config.js`. Card checkout is paused and still charges the item total from `netlify/lib/catalogue.js`, with no courier fee added on that path. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
 
 PayFast order references look like `FF-261004-K7QM` (year, month, day in South Africa, then four characters). WhatsApp order references stay in the longer `FF-20260929-K7QM` form.
 

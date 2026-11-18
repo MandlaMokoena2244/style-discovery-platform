@@ -18,6 +18,46 @@ function applySiteDetails() {
     document.querySelectorAll('[data-site-address]').forEach(function(el) {
         el.textContent = site.addressLine;
     });
+    if (!site.delivery || typeof site.formatZar !== 'function') return;
+    document.querySelectorAll('[data-site-free-from]').forEach(function(el) {
+        el.textContent = site.formatZar(site.delivery.freeFrom);
+    });
+    document.querySelectorAll('[data-site-door-fee]').forEach(function(el) {
+        el.textContent = site.formatZar(site.delivery.doorToDoor);
+    });
+    document.querySelectorAll('[data-site-locker-fee]').forEach(function(el) {
+        el.textContent = site.formatZar(site.delivery.locker);
+    });
+    document.querySelectorAll('[data-site-locker-hours]').forEach(function(el) {
+        el.textContent = String(site.delivery.lockerHours);
+    });
+    document.querySelectorAll('[data-site-locker-provider]').forEach(function(el) {
+        el.textContent = site.delivery.lockerProvider;
+    });
+}
+
+function deliveryChoiceLabel(value) {
+    const delivery = window.FASHFORGE && window.FASHFORGE.delivery;
+    if (value === 'locker') {
+        const provider = delivery && delivery.lockerProvider ? delivery.lockerProvider : 'Courier Guy';
+        return provider + ' locker';
+    }
+    return 'door-to-door';
+}
+
+function insertDeliveryChoice(button) {
+    if (!button || document.getElementById('delivery-choice') || !window.FASHFORGE || !window.FASHFORGE.delivery) return;
+    const delivery = window.FASHFORGE.delivery;
+    const zar = window.FASHFORGE.formatZar;
+    const field = document.createElement('fieldset');
+    field.className = 'delivery-choice';
+    field.id = 'delivery-choice';
+    field.innerHTML =
+        '<legend>Delivery</legend>' +
+        '<label><input type="radio" name="delivery-method" value="door"> Door-to-door, ' + zar(delivery.doorToDoor) + '</label>' +
+        '<label><input type="radio" name="delivery-method" value="locker"> ' + delivery.lockerProvider + ' locker, ' + zar(delivery.locker) + '. Collect with a PIN within ' + delivery.lockerHours + ' hours.</label>' +
+        '<p>' + window.FASHFORGE.freeDeliveryLine() + '</p>';
+    button.insertAdjacentElement('beforebegin', field);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -395,7 +435,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ${payfastOn ? checkoutFormHtml() : ''}
             </div>
             <div class="cart-drawer-footer">
-                ${payfastOn ? '<p class="cart-delivery-note">Free delivery on orders over R4,000.</p>' : ''}
+                ${payfastOn ? '<p class="cart-delivery-note">' + (window.FASHFORGE && window.FASHFORGE.freeDeliveryLine ? window.FASHFORGE.freeDeliveryLine() : 'Free delivery on orders of R2,000 or more.') + '</p>' : ''}
                 <div class="cart-total-row">
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
@@ -740,6 +780,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
+        insertDeliveryChoice(addBtn);
         const pieceLabels = {
             top: 'Boxy top',
             jogger: 'Black wide leg graphic jogger',
@@ -772,6 +813,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return;
             }
 
+            const deliveryChoice = document.querySelector('input[name="delivery-method"]:checked');
+            if (!deliveryChoice) {
+                alert('Please choose door-to-door delivery or a Courier Guy locker.');
+                return;
+            }
+
             const parts = [];
             document.querySelectorAll('.size-group').forEach(group => {
                 const selected = group.querySelector('.size-btn.selected');
@@ -781,7 +828,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             const name = addBtn.dataset.name || 'this piece';
             const sizeText = parts.join(', ');
-            const message = "Hi FashForge, I'd like to order " + name + (sizeText ? ' (' + sizeText + ')' : '') + '.';
+            const message = "Hi FashForge, I'd like to order " + name + (sizeText ? ' (' + sizeText + ')' : '') + '. Delivery: ' + deliveryChoiceLabel(deliveryChoice.value) + '.';
             const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
             const opened = window.open(url, '_blank', 'noopener');
             if (!opened) {

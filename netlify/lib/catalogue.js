@@ -4,8 +4,9 @@
 // and with PIECE_STOCK in script.js.
 // An empty size list means that piece is sold out. Put the sizes back to restock.
 //
-// Delivery: the site states "Free delivery on orders over R4,000" and
-// does not state a delivery fee. The amount charged is the item total.
+// Published delivery (site-config.js): door-to-door R99, Courier Guy locker R70,
+// free on orders of R2,000 or more. Card checkout is paused and still charges
+// the item total only.
 
 const OUTFIT_ID_RE = /^FF-[MWK]-\d{3}$/;
 

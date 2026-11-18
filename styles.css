@@ -1267,6 +1267,30 @@ h1, h2, h3, h4 {
     line-height: 1.2;
 }
 .sold-out-label { margin: 0; }
+.delivery-choice {
+    border: 1px solid #ddd;
+    margin: 0 0 1.25rem;
+    padding: 0.85rem 1rem 1rem;
+}
+.delivery-choice legend {
+    padding: 0 0.35rem;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.delivery-choice label {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    margin: 0.55rem 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+.delivery-choice p {
+    margin: 0.65rem 0 0;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
 .product-info-col > .sold-out-badge { margin-top: 0.85rem; }
 .item-card > .sold-out-badge,
 .style-card > .sold-out-badge {

@@ -186,7 +186,7 @@ test('checkout ignores the client price and does not add a delivery fee', async 
     });
     assert.equal(response.statusCode, 200);
     const body = JSON.parse(response.body);
-    // 1050 + 250 * 2. Under R4,000, and the site states no other delivery fee.
+    // 1050 + 250 * 2. Card checkout is paused and still charges the item total only.
     assert.equal(body.amount, '1550.00');
     assert.equal(body.orderRef, 'FF-261004-AAAA');
     assert.equal(body.processUrl, 'https://sandbox.payfast.co.za/eng/process');
@@ -229,7 +229,7 @@ test('a long cart summary splits across PayFast custom fields and still reprices
     assert.equal(again.deliveryFeeCents, 0);
 });
 
-test('an order over R4,000 is still charged the item total only', () => {
+test('an order of R2,000 or more is still charged the item total only while card checkout is paused', () => {
     const priced = priceCart([
         outfitItem('FF-W-002', { top: 'M', pants: 'S', sneaker: '7' }),
         outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '6' })
@@ -674,7 +674,11 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     assert.match(script, /Card payments are not available yet\. To place an order, use the button on the product page\./);
     assert.match(script, /Order on WhatsApp/);
     assert.match(script, /Pay by card/);
-    assert.match(script, /Free delivery on orders over R4,000\./);
+    assert.match(script, /Free delivery on orders of R2,000 or more\./);
+    const siteConfig = fs.readFileSync(path.join(ROOT, 'site-config.js'), 'utf8');
+    assert.match(siteConfig, /doorToDoor: 99/);
+    assert.match(siteConfig, /locker: 70/);
+    assert.match(siteConfig, /freeFrom: 2000/);
     assert.equal(script.includes('https://wa.me/27672565980?text='), true);
     for (const file of fs.readdirSync(ROOT)) {
         if (!file.endsWith('.html')) continue;

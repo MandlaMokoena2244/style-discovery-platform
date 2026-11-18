@@ -1,5 +1,5 @@
 // Shop details that should stay easy to change.
-// TODO(Mandla): switch email to hello@fashforge.co.za when that inbox is ready.
+// The public email will switch to hello@fashforge.co.za when that inbox is ready.
 window.FASHFORGE = {
     legalName: 'FashForge (Pty) Ltd',
     registration: '2026/919971/07',

@@ -65,7 +65,8 @@
     function emptyHtml(title, text) {
         return '<div class="catalogue-empty">' +
             '<h2>' + escapeHtml(title || 'New outfits coming soon') + '</h2>' +
-            (text ? '<p>' + escapeHtml(text) + '</p>' : '') +
+            '<p>' + escapeHtml(text || 'Follow us on Instagram for the first drop.') + '</p>' +
+            '<p><a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">@fashforge_official_account</a></p>' +
             '</div>';
     }
 
@@ -145,7 +146,7 @@
             group.items.push(outfit);
         });
         if (!groups.length) {
-            mount.innerHTML = emptyHtml('New outfits coming soon', 'Fresh looks will be added here.');
+            mount.innerHTML = emptyHtml('New outfits coming soon', 'Follow us on Instagram for the first drop.');
             return;
         }
         mount.innerHTML = groups.map(function(group) {
@@ -218,7 +219,7 @@
             if (product.brand && names.indexOf(product.brand) === -1) names.push(product.brand);
         });
         if (!names.length) {
-            grid.innerHTML = emptyHtml('Brands coming soon', 'Partner brands will be listed here as outfits are added.');
+            grid.innerHTML = emptyHtml('New outfits coming soon', 'Partner brands will be listed here when new outfits are added.');
             return;
         }
         grid.innerHTML = names.map(function(name) {

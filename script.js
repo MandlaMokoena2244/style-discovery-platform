@@ -181,60 +181,16 @@ function activePaymentProvider() {
     return 'whatsapp';
 }
 
-// In-stock sizes only, keyed by piece id. Edit this list and the matching
-// STOCK entry in netlify/lib/catalogue.js together. sizes: [] means sold out.
-// Restock by putting sizes back. There is no separate sold-out flag.
-// Do not add brand prices here.
+// In-stock sizes only, keyed by piece id. Keep this in step with products.json.
+// The public catalogue is empty until outfits are added there.
+// sizes: [] means sold out. There is no separate sold-out flag.
 const PIECE_STOCK = {
-    pieces: {
-        1: { name: 'Boxy top', sizes: ['XXS', 'XS', 'S', 'M', 'L'] },
-        2: { name: 'Wide leg graphic jogger', sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
-        3: { name: 'Chunky skater sneaker', sizes: ['7', '8', '9'] },
-        4: { name: 'Total Diva Regular T-Shirt', sizes: ['XS', 'S', 'M', 'L', 'XL'] },
-        5: { name: 'Slim Leg Turn Up Barbi Pant in Stone', sizes: ['XS'] },
-        6: { name: 'adidas Originals Firebird denim pants', sizes: ['XS', 'S'] },
-        7: { name: 'Tinley Sneakers', sizes: ['3', '5', '6', '7', '8'] },
-        8: { name: 'Fancy Button Linen Look Wrap Top', sizes: ['XXS'] },
-        9: { name: 'Culotte Linen Look Pant', sizes: ['XS', 'S'] },
-        10: { name: 'Aloisa Knit Cardigan', sizes: ['One size fits most'] },
-        11: { name: 'Aloisa Knit Pants', sizes: ['One size fits most'] },
-        12: { name: 'Noella Sneakers', sizes: ['6', '7', '8'] },
-        13: { name: 'Sleeveless Double Breasted Knit Top', sizes: ['XXS'] },
-        14: { name: 'I Need You Corset', sizes: [] },
-        15: { name: 'Sadie Wide Leg Jeans', sizes: [] },
-        16: { name: 'Clause Boots', sizes: ['5'] }
-    }
+    pieces: {}
 };
 
-// Piece ids for each outfit, and for pieces sold on their own.
-// Outfit cards use data-outfit-id. Piece cards use data-piece-id.
-// Sold out when any of those pieces has sizes: [].
-const OUTFIT_PIECE_IDS = {
-    'FF-M-001': [1, 2, 3],
-    'FF-W-001': [4, 5],
-    'FF-W-002': [4, 6, 7],
-    'FF-W-003': [8, 9],
-    'FF-W-004': [10, 11, 12],
-    'FF-W-005': [13, 5],
-    'FF-W-006': [14, 15, 16]
-};
+const OUTFIT_PIECE_IDS = {};
 
-const SINGLE_PIECE_IDS = {
-    'Boxy Top': 1,
-    'Black Wide Leg Graphic Jogger': 2,
-    'Chunky Lace Up Skater Sneaker': 3,
-    'Total Diva Regular T-Shirt': 4,
-    'Barbi Pant, tan colour': 5,
-    'Barbi Pant, stone colour': 5,
-    'adidas Originals Firebird Denim Pants': 6,
-    'Tinley Sneakers': 7,
-    'Culotte Linen Look Pant, orange': 9,
-    'Aloisa Knit Cardigan': 10,
-    'Aloisa Knit Pants': 11,
-    'Noella Sneakers': 12,
-    'I Need You Corset': 14,
-    'Sadie Wide Leg Jeans': 15
-};
+const SINGLE_PIECE_IDS = {};
 
 function pieceSizes(pieceId) {
     const entry = PIECE_STOCK.pieces[pieceId];
@@ -354,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Outfit ID format: FF-<M|W|K>-<NNN> (M men, W women, K kids), e.g. FF-M-001.
     // Set data-outfit-id on the product's Add to Cart button. The next free number
-    // in that department is the next ID (FF-M-002, FF-W-007, FF-K-001, ...).
+    // in that department is the next ID. The catalogue is empty, so FF-M-001 is free.
     // Brand product URLs and supplier details stay in a private Google Sheet keyed
     // by this ID — do not put them in the site. Cart lines with no outfit id
     // (or an older non-FF id) still check out; the id is left off that line.
@@ -794,11 +750,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
         insertDeliveryChoice(addBtn);
-        const pieceLabels = {
-            top: 'Boxy top',
-            jogger: 'Black wide leg graphic jogger',
-            shoe: 'Chunky lace up skater sneaker'
-        };
+        const pieceLabels = {};
         addBtn.addEventListener('click', () => {
             if (addBtn.disabled || productSoldOut) return;
             // Collect the chosen size from EACH piece group

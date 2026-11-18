@@ -699,6 +699,10 @@ h1, h2, h3, h4 {
     max-width: 32rem;
     margin: 0.4rem auto 0;
 }
+.catalogue-empty a {
+    color: inherit;
+    border-bottom: 1px solid var(--accent);
+}
 .item-card picture,
 .product-image-col picture,
 .piece-frame picture {

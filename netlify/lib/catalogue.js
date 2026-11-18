@@ -11,7 +11,8 @@
 const OUTFIT_ID_RE = /^FF-[MWK]-\d{3}$/;
 
 // Prices, size lists, and outfit pieces come from products.json.
-// Both Barbi colours share stock id 5. Pieces with sellAlone: false stay out of PIECES.
+// The public catalogue is empty until outfits are added there.
+// Pieces with sellAlone: false stay out of PIECES.
 const catalogueData = require('../../products.json');
 
 const STOCK = {};

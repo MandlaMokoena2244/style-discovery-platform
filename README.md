@@ -5,7 +5,7 @@ The public catalogue in `products.json` is empty. Men, Women, Kids, and the styl
 
 ## Adding a product
 
-`products.json` has two arrays, `products` and `outfits`. Listing pages render from that file. `product.html?id=` shows a product that does not have its own page. Leave `paymentLink` empty until a Stitch Express link exists. The public email address is `email` in `site-config.js`.
+`products.json` has two arrays, `products` and `outfits`. Listing pages render from that file. `product.html?id=` shows a product that does not have its own page. Leave `paymentLink` empty until a Stitch Express link exists. The public email address is hello@fashforge.co.za, set as `email` in `site-config.js`.
 
 Outfit ids use `FF-<M|W|K>-<3 digits>` (`M` men, `W` women, `K` kids). The next free number is `FF-M-001`, `FF-W-001`, or `FF-K-001`.
 

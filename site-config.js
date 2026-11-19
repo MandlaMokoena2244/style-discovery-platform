@@ -1,5 +1,5 @@
 // Shop details that should stay easy to change.
-// The public email will switch to hello@fashforge.co.za when that inbox is ready.
+// Public email: hello@fashforge.co.za
 function formatZar(amount) {
     const value = Number(amount);
     const digits = Number.isInteger(value) ? 0 : 2;
@@ -9,7 +9,7 @@ function formatZar(amount) {
 window.FASHFORGE = {
     legalName: 'FashForge (Pty) Ltd',
     registration: '2026/919971/07',
-    email: 'fashforge@gmail.com',
+    email: 'hello@fashforge.co.za',
     phoneDisplay: '+27 67 256 5980',
     phoneWa: '27672565980',
     instagram: 'https://www.instagram.com/fashforge_official_account/',

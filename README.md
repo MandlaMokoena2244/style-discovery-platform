@@ -1,61 +1,67 @@
 # style-discovery-platform
-A fashion discovery platform that helps users explore clothing styles and seamlessly connect to retail products through a curated browsing experience.
+A fashion discovery platform that helps users explore clothing styles and connect to retail products through a curated browsing experience.
 
-## Outfit IDs
+The public catalogue in `products.json` is empty. Men, Women, Kids, and the style pages show a "New outfits coming soon" note until outfits are added. Do not publish a brand until FashForge has an agreement with that brand.
 
-Every real outfit has an ID in the form `FF-<M|W|K>-<3-digit number>`:
+## Adding a product
 
-- `M` — men
-- `W` — women
-- `K` — kids
+`products.json` has two arrays, `products` and `outfits`. Listing pages render from that file. `product.html?id=` shows a product that does not have its own page. Leave `paymentLink` empty until a Stitch Express link exists. The public email address is hello@fashforge.co.za, set as `email` in `site-config.js`.
 
-`FF-M-001` is the Boxy Top Streetwear Set styled by FashForge. Brand: THE FIX. The ID lives on the product as `data-outfit-id` (on the Add to Cart button, and on the listing card). Adding that set to the cart stores the same `id` on the item in `localStorage` under `fashforge_cart`. WhatsApp checkout prints it on the line, for example:
+Outfit ids use `FF-<M|W|K>-<3 digits>` (`M` men, `W` women, `K` kids). The next free number is `FF-M-001`, `FF-W-001`, or `FF-K-001`.
 
-`FF-M-001 — THE FIX — Boxy Top Streetwear Set (Top M, Jogger L, Shoe 9) — Qty: 2 — R2,100.00`
+Example, not a live product:
 
-The same three pieces are also sold on their own from Men, Individual Pieces. Piece prices are Boxy Top R250.00, Black Wide Leg Graphic Jogger R500.00, and Chunky Lace Up Skater Sneaker R400.00. The full set stays R1,050.00. A piece added on its own uses that piece price in the cart total and in the WhatsApp order line. Those lines do not use a separate outfit ID.
+```json
+{
+  "products": [
+    {
+      "id": "example-top",
+      "brand": "Brand name",
+      "name": "Example top",
+      "category": "women",
+      "style": "smart-casual",
+      "price": 100,
+      "sizes": ["S", "M"],
+      "colours": ["Black"],
+      "images": ["images/example-top.jpg"],
+      "imageAlt": "Example top",
+      "description": "Short description.",
+      "paymentLink": "",
+      "inStock": true,
+      "stockId": 1,
+      "code": "W-EXAMPLE",
+      "label": "Top",
+      "sellAlone": true,
+      "page": ""
+    }
+  ],
+  "outfits": [
+    {
+      "id": "FF-W-001",
+      "title": "Example outfit",
+      "gender": "women",
+      "style": "smart-casual",
+      "stylePage": "women-smart-casual.html",
+      "productIds": ["example-top"],
+      "pieces": [
+        { "key": "top", "label": "Top", "stockId": 1 }
+      ],
+      "totalPrice": 100,
+      "brand": "Brand name",
+      "images": ["images/example-outfit.jpg"],
+      "imageAlt": "Example outfit",
+      "description": "Short description.",
+      "paymentLink": "",
+      "inStock": true,
+      "page": "",
+      "trending": true,
+      "tag": "1 Piece"
+    }
+  ]
+}
+```
 
-Each checkout also adds one order reference, `Order ref: FF-` plus the date (`YYYYMMDD`) and a short random code, for example `Order ref: FF-20260929-K7QM`.
-
-Items already in a cart with no `id`, or with an older id that is not this format, still check out. Those lines are sent without an outfit ID.
-
-### Adding a new outfit
-
-1. Take the next free number for that department (`FF-M-002`, `FF-W-007`, `FF-K-001`, and so on). Women's `FF-W-001` to `FF-W-006` are already in use.
-2. Put that ID on the product's Add to Cart button (and on its listing card), for example `data-outfit-id="FF-W-007"`.
-3. Leave brand product URLs, source links, and supplier details out of the site. Those stay in the private Google Sheet, keyed by the outfit ID.
-
-### Adding a product details block
-
-Copy the Product details section on `product-streetwear-set.html` (outfit `FF-M-001`) and place it below that page's size selectors and add-to-cart area. One card per piece: the piece name as a heading, then a `<dl>` of four rows in this order: Material, Fit, Colour, Care (`<dt>` and `<dd>`, not a table). Reuse the `.product-details` rules in `styles.css`. Above 720px the cards sit side by side in a three-column grid; at 720px and below they stack in one column. Do not add retailer or brand links. This page has no WhatsApp link, so the sizing tip stays plain text. If a future product page already links to WhatsApp, point the words "WhatsApp" in that tip at the same link.
-
-### Women's full outfits
-
-Women, Full Outfits links to four style pages. Each outfit page sets `data-outfit-id` on the Add to Cart button and on the listing card. WhatsApp checkout prints that ID the same way as `FF-M-001`, and it still adds one order reference.
-
-| ID | Name | Set price | Page |
-| --- | --- | --- | --- |
-| FF-W-001 | Total Diva Stone Set | R1,400.00 | `product-total-diva-stone-set.html` |
-| FF-W-002 | Diva Denim Sneaker Set | R4,700.00 | `product-diva-denim-sneaker-set.html` |
-| FF-W-003 | Orange Linen Co-ord | R700.00 | `product-orange-linen-coord.html` |
-| FF-W-004 | Chocolate Knit Co-ord | R3,300.00 | `product-chocolate-knit-coord.html` |
-| FF-W-005 | Taupe Waistcoat Set | R700.00 | `product-taupe-waistcoat-set.html` |
-| FF-W-006 | Corset and Wide Leg Night Set | R5,500.00 | `product-corset-wide-leg-night-set.html` |
-
-Style pages:
-
-- Streetwear (`women-streetwear.html`): FF-W-001 and FF-W-002
-- Smart Casual (`women-smart-casual.html`): FF-W-003 and FF-W-004
-- Formal (`women-formal.html`): FF-W-005
-- Evening (`women-evening.html`): FF-W-006
-
-The set price is for the full outfit. Piece names are listed on the outfit page. Brand names are plain text. Brand product URLs and piece prices are not on the site.
-
-The Fancy Button Linen Look Wrap Top (piece id 8) stays inside Orange Linen Co-ord, FF-W-003. The Sleeveless Double Breasted Knit Top (piece id 13) stays inside Taupe Waistcoat Set, FF-W-005. Those two tops are not listed under Women, Individual Pieces and they have no standalone product page.
-
-In-stock sizes come from `PIECE_STOCK` in `script.js`, keyed by piece id. Each size group sets `data-piece-id` and is left empty. Only sizes in stock are shown. A piece with one size is preselected. The next free women's number is FF-W-007.
-
-A piece is sold out when its size list is empty (`sizes: []` in `PIECE_STOCK`, and `[]` for the same id in `netlify/lib/catalogue.js`). There is no separate sold-out flag. The size row says Sold out, Add to Cart is disabled, and the whole outfit cannot be bought while any piece is missing. Listing cards with `data-outfit-id` or `data-piece-id` show a Sold out badge from `OUTFIT_PIECE_IDS` and `SINGLE_PIECE_IDS` in `script.js`. WhatsApp and card checkout both refuse a cart that still has the piece. To restock, put the sizes back in both lists.
+Leave brand product URLs and supplier details out of the site. An empty `sizes` list means that piece is sold out. `sellAlone: false` keeps a piece inside an outfit only. After you add an entry, put the same sizes in `PIECE_STOCK` in `script.js` if that piece is sold from a hand-built page. Card checkout reads prices from `products.json` through `netlify/lib/catalogue.js`.
 
 ## Card payments (PayFast)
 
@@ -65,11 +71,11 @@ Ordering is paused until you change one switch. In `script.js`:
 const PAYMENT_PROVIDER = 'disabled'; // 'whatsapp' or 'payfast' when the store should take orders again
 ```
 
-- `disabled` (current): the cart shows a notice in place of the checkout button and does not take orders. Add to cart still works. There is no WhatsApp order button and no card form.
+- `disabled` (current): the cart does not take card or cart checkout. On a product page, Buy opens `paymentLink` when one is set in `products.json`. Otherwise the button sends an order on WhatsApp with the product name and size. Card checkout stays off.
 - `whatsapp`: the cart shows Order on WhatsApp.
-- `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Netlify Forms and does not follow this switch. WhatsApp on the contact page is for queries.
+- `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Web3Forms and does not follow this switch. WhatsApp on the contact page is for queries.
 
-The amount charged is the item total from `netlify/lib/catalogue.js`. The shop says "Free delivery on orders over R4,000" and does not state a delivery fee, so no delivery fee is added either way. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
+Door-to-door delivery is R99 and a Courier Guy locker is R70. Delivery is free on orders of R2,000 or more. Those amounts live in `site-config.js`. Card checkout is paused and still charges the item total from `netlify/lib/catalogue.js`, with no courier fee added on that path. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
 
 PayFast order references look like `FF-261004-K7QM` (year, month, day in South Africa, then four characters). WhatsApp order references stay in the longer `FF-20260929-K7QM` form.
 

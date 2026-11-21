@@ -8,8 +8,16 @@
     <meta property="og:description" content="FashForge is a South African outfit-styling business that pairs pieces from South African brands into complete looks. New men's and women's looks every week.">
     <meta property="og:url" content="https://fashforge.co.za/">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
+    <meta property="og:image:alt" content="FashForge">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FashForge | Styled Outfits from SA Brands">
+    <meta name="twitter:description" content="FashForge is a South African outfit-styling business that pairs pieces from South African brands into complete looks. New men's and women's looks every week.">
+    <meta name="twitter:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
     <link rel="canonical" href="https://fashforge.co.za/">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <title>FashForge | Styled Outfits from SA Brands</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,7 +27,7 @@
 <body>
 
     <nav class="navbar">
-        <a href="index.html" class="logo">FashForge</a>
+        <a href="index.html" class="logo"><img src="images/logo-mark-white.png" alt="FashForge"></a>
         <ul class="nav-links">
             <li><a href="index.html">Home</a></li>
             <li><a href="men.html">Men</a></li>
@@ -42,103 +50,62 @@
         </div>
     </nav>
 
-    <!-- Brand Label -->
-    <div class="home-brand">
-        <h1>FashForge</h1>
-        <span>Est. 2026</span>
-        <a class="home-instagram" href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">Instagram</a>
-    </div>
+    <section class="home-hero" aria-labelledby="home-hero-title">
+        <img class="home-hero-logo" src="images/logo-full-white.png" alt="FashForge">
+        <div class="home-hero-copy">
+            <h1 id="home-hero-title">
+                <span>Choose a style</span>
+                <span>Pick your best outfit</span>
+                <span>Shopping made easy</span>
+            </h1>
+            <div class="home-hero-bar" aria-hidden="true"><span></span></div>
+        </div>
+    </section>
 
     <!-- Category Selector -->
     <div class="category-selector">
         <a href="men.html" class="category-square men">
             <img src="images/home-men.jpg" alt="">
-            <div class="category-content">
+            <span class="category-content">
                 <h2>Men</h2>
-                <div class="category-line"></div>
-                <p>Explore Collection</p>
-            </div>
+                <span class="category-arrow" aria-hidden="true">→</span>
+            </span>
         </a>
         <a href="women.html" class="category-square women">
             <img src="images/home-women.jpg" alt="">
-            <div class="category-content">
+            <span class="category-content">
                 <h2>Women</h2>
-                <div class="category-line"></div>
-                <p>Explore Collection</p>
-            </div>
+                <span class="category-arrow" aria-hidden="true">→</span>
+            </span>
         </a>
         <a href="kids.html" class="category-square kids">
             <img src="images/home-kids.jpg" alt="">
-            <div class="category-content">
+            <span class="category-content">
                 <h2>Kids</h2>
-                <div class="category-line"></div>
-                <p>Explore Collection</p>
-            </div>
+                <span class="category-arrow" aria-hidden="true">→</span>
+            </span>
         </a>
         <a href="brands.html" class="category-square brands">
             <img src="images/home-brands.jpg" alt="">
-            <div class="category-content">
+            <span class="category-content">
                 <h2>Brands</h2>
-                <div class="category-line"></div>
-                <p>Discover Partners</p>
-            </div>
+                <span class="category-arrow" aria-hidden="true">→</span>
+            </span>
         </a>
     </div>
 
     <section class="trending-section" aria-labelledby="trending-heading">
         <div class="pieces-intro">
-            <span class="section-label">Styles</span>
-            <h2 id="trending-heading">Trending styles</h2>
-            <p>Two edits from the current collection.</p>
+            <span class="section-label">Collection</span>
+            <h2 id="trending-heading">Outfits</h2>
         </div>
-        <div class="trending-groups">
-            <div class="trending-group single">
-                <h3 class="trending-style-name"><a href="men-streetwear.html">Men Streetwear</a></h3>
-                <div class="items-grid">
-                    <a href="men-streetwear.html" class="item-card outfit-card">
-                        <span class="item-tag">Men</span>
-                        <img src="images/streetwear1.png" alt="Boxy Top Streetwear Set">
-                        <div class="item-info">
-                            <p class="item-brand">Streetwear</p>
-                            <h3>Boxy Top Streetwear Set</h3>
-                            <p class="item-id">FF-M-001</p>
-                            <p class="item-price">R1,050.00</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            <div class="trending-group">
-                <h3 class="trending-style-name"><a href="women-smart-casual.html">Women Smart Casual</a></h3>
-                <div class="items-grid">
-                    <a href="women-smart-casual.html" class="item-card outfit-card">
-                        <span class="item-tag">Women</span>
-                        <img src="images/women-ff-w-003.jpg" alt="Orange Linen Co-ord: orange wrap top and matching culottes">
-                        <div class="item-info">
-                            <p class="item-brand">Smart Casual</p>
-                            <h3>Orange Linen Co-ord</h3>
-                            <p class="item-id">FF-W-003</p>
-                            <p class="item-price">R700.00</p>
-                        </div>
-                    </a>
-                    <a href="women-smart-casual.html" class="item-card outfit-card">
-                        <span class="item-tag">Women</span>
-                        <img src="images/women-ff-w-004.jpg" alt="Chocolate Knit Co-ord: cardigan, knit pants, and sneakers">
-                        <div class="item-info">
-                            <p class="item-brand">Smart Casual</p>
-                            <h3>Chocolate Knit Co-ord</h3>
-                            <p class="item-id">FF-W-004</p>
-                            <p class="item-price">R3,300.00</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
+        <div class="trending-groups" data-catalogue-trending></div>
     </section>
 
     <footer class="footer">
         <div class="footer-grid">
             <div class="footer-brand">
-                <h3>FashForge</h3>
+                <a href="index.html" class="footer-logo"><img src="images/logo-full-white.png" alt="FashForge"></a>
                 <p>South African outfit styling. Complete looks from South African brands, with new men's and women's looks every week.</p>
             </div>
             <div class="footer-col">
@@ -161,8 +128,9 @@
                 <h4>Policies</h4>
                 <ul>
                     <li><a href="terms-and-conditions.html">Terms and Conditions</a></li>
-                    <li><a href="refunds-and-cancellations.html">Refunds and Cancellations</a></li>
-                    <li><a href="delivery-policy.html">Delivery Policy</a></li>
+                    <li><a href="refunds-and-cancellations.html">Returns</a></li>
+                    <li><a href="delivery-policy.html">Shipping</a></li>
+                    <li><a href="privacy.html">Privacy</a></li>
                 </ul>
             </div>
             <div class="footer-col">
@@ -173,10 +141,15 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 FashForge</p>
+            <p>&copy; 2026 <span data-site-legal>FashForge (Pty) Ltd</span> · Est. 2026</p>
+            <p>Registration number <span data-site-reg>2026/919971/07</span></p>
+            <p><span data-site-address>1064 Cornelius Street, Weltevredenpark, Roodepoort, Gauteng, 1709</span></p>
+            <p>Email <a data-site-email href="mailto:hello@fashforge.co.za">hello@fashforge.co.za</a></p>
         </div>
     </footer>
 
+    <script src="site-config.js"></script>
+    <script src="catalogue-ui.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

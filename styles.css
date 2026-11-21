@@ -61,6 +61,13 @@ h1, h2, h3, h4 {
     letter-spacing: 3px;
     color: var(--white);
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+.logo img {
+    height: 2.35rem;
+    width: auto;
+    display: block;
 }
 .navbar.scrolled .logo { color: var(--white); }
 
@@ -115,21 +122,33 @@ h1, h2, h3, h4 {
    HOMEPAGE - CATEGORY SELECTOR
    ============================================ */
 .category-selector {
-    height: calc(100vh - var(--nav-height));
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    position: relative;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+        "men men women"
+        "kids brands brands";
+    gap: 16px;
+    padding: 16px;
+    box-sizing: border-box;
 }
+.category-square.men { grid-area: men; }
+.category-square.women { grid-area: women; }
+.category-square.kids { grid-area: kids; }
+.category-square.brands { grid-area: brands; }
 
 .category-square {
     position: relative;
+    display: block;
+    min-height: 320px;
     overflow: hidden;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 16px;
     text-decoration: none;
+    color: var(--white);
+}
+.category-square:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
 }
 
 .category-square img {
@@ -139,7 +158,7 @@ h1, h2, h3, h4 {
     height: 100%;
     object-fit: cover;
     z-index: 0;
-    transition: transform 0.6s ease;
+    transition: transform 0.45s ease;
 }
 .category-square.men img { object-position: center 18%; }
 .category-square.women img { object-position: center 46%; }
@@ -149,102 +168,148 @@ h1, h2, h3, h4 {
 .category-square::before {
     content: '';
     position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.22) 46%, rgba(0,0,0,0.38) 100%);
-    transition: var(--transition);
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.16) 36%, rgba(0,0,0,0) 62%);
     z-index: 1;
+    pointer-events: none;
 }
-
-.category-square:hover::before {
-    background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, rgba(0,0,0,0.34) 46%, rgba(0,0,0,0.48) 100%);
-}
-.category-square:hover img { transform: scale(1.06); }
 
 .category-content {
-    position: relative;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 2;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 1.15rem 1.35rem 1.2rem;
     color: var(--white);
-    padding: 2rem;
 }
 
 .category-content h2 {
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-    transition: var(--transition);
-    text-shadow: 0 2px 18px rgba(0,0,0,0.45);
-}
-
-.category-content .category-line {
-    width: 40px;
-    height: 1px;
-    background: var(--accent);
-    margin: 0 auto 1rem;
-    transition: var(--transition);
-}
-
-.category-content p {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: var(--transition);
-    color: rgba(255,255,255,0.8);
-}
-
-.category-square:hover .category-content h2 {
-    transform: translateY(-5px);
-}
-
-.category-square:hover .category-line {
-    width: 80px;
-}
-
-.category-square:hover .category-content p {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Brand label at top of homepage */
-.home-brand {
-    position: absolute;
-    top: calc(var(--nav-height) + 1.25rem);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    text-align: center;
-    color: var(--white);
-}
-
-.home-brand h1 {
-    font-size: 2rem;
-    letter-spacing: 8px;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: clamp(1.65rem, 2.5vw, 2.2rem);
     font-weight: 600;
-    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    letter-spacing: 0;
+    line-height: 1;
+    text-transform: none;
 }
 
-.home-brand span {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 4px;
-    opacity: 0.8;
-}
-.home-instagram {
+.category-arrow {
     display: inline-block;
-    margin-top: 0.75rem;
-    color: var(--white);
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--accent);
-    padding-bottom: 3px;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    font-size: 1.35rem;
+    font-weight: 300;
+    line-height: 1;
+    transition: transform 0.45s ease;
 }
-.home-instagram:hover { color: var(--accent); }
+
+.category-square:hover img,
+.category-square:focus-visible img { transform: scale(1.04); }
+
+.category-square:hover .category-arrow,
+.category-square:focus-visible .category-arrow { transform: translateX(6px); }
+
+@media (prefers-reduced-motion: reduce) {
+    .category-square img,
+    .category-arrow { transition: none; }
+    .category-square:hover img,
+    .category-square:focus-visible img,
+    .category-square:hover .category-arrow,
+    .category-square:focus-visible .category-arrow { transform: none; }
+}
+
+/* Homepage hero band. Icons and the bottom stitch live in the background art. */
+.home-hero {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) minmax(0, auto) minmax(150px, 1fr);
+    align-items: center;
+    height: 240px;
+    padding: 0 4vw 1.1rem;
+    box-sizing: border-box;
+    background-color: #0B0B0B;
+    background-image: url('assets/hero/hero-desktop.png');
+    background-image: image-set(
+        url('assets/hero/hero-desktop.webp') type('image/webp'),
+        url('assets/hero/hero-desktop.png') type('image/png')
+    );
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center bottom;
+    color: #fff;
+}
+.home-hero-logo {
+    grid-column: 1;
+    justify-self: start;
+    height: 5.4rem;
+    width: auto;
+    display: block;
+}
+.home-hero-copy {
+    grid-column: 2;
+    justify-self: center;
+    text-align: center;
+    max-width: 100%;
+}
+.home-hero h1 {
+    margin: 0;
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(0.72rem, 1.15vw, 1.02rem);
+    letter-spacing: 0.28em;
+    line-height: 1.55;
+    text-transform: uppercase;
+    color: #fff;
+}
+.home-hero h1 span { display: block; }
+.home-hero-bar {
+    width: min(16rem, 78%);
+    height: 3px;
+    margin: 0.95rem auto 0;
+    background: rgba(184, 155, 94, 0.28);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.home-hero-bar span {
+    display: block;
+    width: 70%;
+    height: 100%;
+    background: #B89B5E;
+}
+@media (max-width: 768px) {
+    .home-hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: auto;
+        padding: 2.25rem 1.15rem 3.25rem;
+        background-image: url('assets/hero/hero-mobile.png');
+        background-image: image-set(
+            url('assets/hero/hero-mobile.webp') type('image/webp'),
+            url('assets/hero/hero-mobile.png') type('image/png')
+        );
+        background-position: center bottom;
+    }
+    .home-hero-logo {
+        height: 7.25rem;
+        margin-bottom: 1.6rem;
+    }
+    .home-hero h1 {
+        font-size: clamp(0.78rem, 3.6vw, 0.95rem);
+        letter-spacing: 0.18em;
+    }
+    .home-hero-bar { margin-top: 1.35rem; }
+}
+@media (max-width: 380px) {
+    .home-hero { padding-left: 0.85rem; padding-right: 0.85rem; }
+    .home-hero h1 {
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+    }
+    .home-hero-logo { height: 6.1rem; }
+}
 
 /* ============================================
    CATEGORY PAGES (MEN, WOMEN, KIDS, BRANDS)
@@ -632,6 +697,15 @@ h1, h2, h3, h4 {
     margin-bottom: 1rem;
     letter-spacing: 3px;
 }
+.footer-logo {
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+.footer-logo img {
+    height: 4.6rem;
+    width: auto;
+    display: block;
+}
 .footer-brand p {
     color: rgba(255,255,255,0.6);
     line-height: 1.8;
@@ -657,6 +731,35 @@ h1, h2, h3, h4 {
 .footer-col a:hover {
     color: var(--accent);
 }
+.footer-bottom p + p {
+    margin-top: 0.35rem;
+}
+.catalogue-empty,
+.product-missing {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3.5rem 1.25rem 4.5rem;
+}
+.catalogue-empty h2,
+.product-missing h1 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    margin-bottom: 0.75rem;
+}
+.catalogue-empty p,
+.product-missing p {
+    color: var(--text-light);
+    max-width: 32rem;
+    margin: 0.4rem auto 0;
+}
+.catalogue-empty a {
+    color: inherit;
+    border-bottom: 1px solid var(--accent);
+}
+.item-card picture,
+.product-image-col picture,
+.piece-frame picture {
+    display: block;
+}
 .footer-bottom {
     border-top: 1px solid rgba(255,255,255,0.1);
     margin-top: 3rem;
@@ -680,12 +783,12 @@ h1, h2, h3, h4 {
    ============================================ */
 @media (max-width: 1024px) {
     .category-selector {
-        grid-template-columns: repeat(2, 1fr);
-        height: auto;
-        min-height: calc(100vh - var(--nav-height));
+        gap: 12px;
+        padding: 12px;
     }
     .category-square {
-        min-height: calc((100vh - var(--nav-height)) / 2);
+        min-height: 240px;
+        border-radius: 14px;
     }
     .about-preview {
         grid-template-columns: 1fr;
@@ -702,31 +805,22 @@ h1, h2, h3, h4 {
 @media (max-width: 768px) {
     .category-selector {
         grid-template-columns: 1fr;
-        min-height: 0;
+        grid-template-areas:
+            "men"
+            "women"
+            "kids"
+            "brands";
+        gap: 12px;
+        padding: 12px;
     }
     .category-square {
-        min-height: 62vw;
+        min-height: 220px;
+        border-radius: 14px;
     }
     .category-square.men img { object-position: center 22%; }
     .category-square.women img { object-position: center 40%; }
     .category-square.kids img { object-position: 38% center; }
     .category-square.brands img { object-position: center center; }
-    /* Keep the home title in its own bar so it does not cover the MEN label */
-    .home-brand {
-        position: relative;
-        top: auto;
-        left: auto;
-        transform: none;
-        width: 100%;
-        max-width: 100%;
-        padding: 1.25rem 1rem 0.85rem;
-        background: var(--primary);
-        box-sizing: border-box;
-    }
-    .home-brand h1 {
-        font-size: 1.7rem;
-        letter-spacing: 0.22em;
-    }
     .nav-links {
         position: fixed;
         top: var(--nav-height);
@@ -1220,6 +1314,30 @@ h1, h2, h3, h4 {
     line-height: 1.2;
 }
 .sold-out-label { margin: 0; }
+.delivery-choice {
+    border: 1px solid #ddd;
+    margin: 0 0 1.25rem;
+    padding: 0.85rem 1rem 1rem;
+}
+.delivery-choice legend {
+    padding: 0 0.35rem;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.delivery-choice label {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    margin: 0.55rem 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+.delivery-choice p {
+    margin: 0.65rem 0 0;
+    color: var(--text-light);
+    font-size: 0.85rem;
+}
 .product-info-col > .sold-out-badge { margin-top: 0.85rem; }
 .item-card > .sold-out-badge,
 .style-card > .sold-out-badge {
@@ -1267,7 +1385,7 @@ h1, h2, h3, h4 {
     font-family: var(--font-body);
     font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 1.5px;
     cursor: pointer;
     transition: var(--transition);
     margin-bottom: 0.5rem;
@@ -1929,14 +2047,6 @@ h1, h2, h3, h4 {
     border-bottom: 1px solid var(--accent);
 }
 
-/* Contact form honeypot stays out of view. Netlify still reads the field. */
-.honeypot {
-    position: absolute;
-    left: -10000px;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-}
 .form-thanks,
 .form-error {
     margin-top: 1rem;

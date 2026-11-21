@@ -88,154 +88,57 @@ test('blank fields are skipped and an empty passphrase is not appended', () => {
     );
 });
 
-test('server catalogue matches the product pages and in-stock sizes', () => {
-    const outfits = [
-        ['product-streetwear-set.html', 'FF-M-001', '1050'],
-        ['product-total-diva-stone-set.html', 'FF-W-001', '1400'],
-        ['product-diva-denim-sneaker-set.html', 'FF-W-002', '4700'],
-        ['product-orange-linen-coord.html', 'FF-W-003', '700'],
-        ['product-chocolate-knit-coord.html', 'FF-W-004', '3300'],
-        ['product-taupe-waistcoat-set.html', 'FF-W-005', '700'],
-        ['product-corset-wide-leg-night-set.html', 'FF-W-006', '5500']
-    ];
-    for (const [file, id, price] of outfits) {
-        const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
-        assert.match(html, new RegExp('data-outfit-id="' + id + '"'));
-        assert.match(html, new RegExp('data-price="' + price + '"'));
-        assert.equal(OUTFITS[id].price, Number(price));
-    }
-    const pieces = [
-        ['product-boxy-top.html', 'Boxy Top', '250'],
-        ['product-graphic-jogger.html', 'Black Wide Leg Graphic Jogger', '500'],
-        ['product-skater-sneaker.html', 'Chunky Lace Up Skater Sneaker', '400'],
-        ['product-total-diva-tee.html', 'Total Diva Regular T-Shirt', '899'],
-        ['product-barbi-pant-tan.html', 'Barbi Pant, tan colour', '479.99'],
-        ['product-barbi-pant-stone.html', 'Barbi Pant, stone colour', '479.99'],
-        ['product-firebird-denim.html', 'adidas Originals Firebird Denim Pants', '2699.95'],
-        ['product-tinley-sneakers.html', 'Tinley Sneakers', '1499'],
-        ['product-orange-culotte.html', 'Culotte Linen Look Pant, orange', '479.99'],
-        ['product-aloisa-cardigan.html', 'Aloisa Knit Cardigan', '1199'],
-        ['product-aloisa-pants.html', 'Aloisa Knit Pants', '1199'],
-        ['product-noella-sneakers.html', 'Noella Sneakers', '1200'],
-        ['product-i-need-you-corset.html', 'I Need You Corset', '1899'],
-        ['product-sadie-jeans.html', 'Sadie Wide Leg Jeans', '1999']
-    ];
-    for (const [file, name, price] of pieces) {
-        const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
-        assert.match(html, new RegExp('data-name="' + name + '"'));
-        assert.match(html, new RegExp('data-price="' + price + '"'));
-        assert.equal(PIECES[name].price, Number(price));
-        assert.equal(html.includes('data-outfit-id'), false);
-    }
-
+test('the public catalogue is empty and old product pages are gone', () => {
+    assert.deepEqual(OUTFITS, {});
+    assert.deepEqual(PIECES, {});
+    assert.deepEqual(STOCK, {});
+    const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'products.json'), 'utf8'));
+    assert.deepEqual(data.products, []);
+    assert.deepEqual(data.outfits, []);
+    const pages = fs.readdirSync(ROOT).filter((name) => name.startsWith('product-') && name.endsWith('.html'));
+    assert.deepEqual(pages, []);
+    assert.equal(fs.existsSync(path.join(ROOT, 'product.html')), true);
+    const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
+    assert.equal(sitemap.includes('/product-'), false);
     const script = fs.readFileSync(path.join(ROOT, 'script.js'), 'utf8');
     const start = script.indexOf('const PIECE_STOCK = ');
     const end = script.indexOf('\n};', start);
     const pieceStock = Function('return ' + script.slice(start + 'const PIECE_STOCK = '.length, end + 2))();
-    for (const [id, sizes] of Object.entries(STOCK)) {
-        assert.deepEqual(pieceStock.pieces[id].sizes, sizes);
-    }
+    assert.deepEqual(pieceStock.pieces, {});
 });
 
-test('a women\'s single piece is priced from the catalogue, and a sold-out piece is refused', async () => {
+test('an item that is not in the catalogue is refused', async () => {
     const response = await handleCheckout({
         httpMethod: 'POST',
         body: JSON.stringify({
             customer: customer(),
-            items: [
-                { name: 'Barbi Pant, tan colour', price: 1, qty: 2, size: 'XS' },
-                { name: 'adidas Originals Firebird Denim Pants', price: 1, qty: 1, size: 'S' }
-            ]
-        })
-    }, {
-        env: ENV,
-        now: new Date('2026-10-12T12:00:00Z'),
-        randomInt: () => 0
-    });
-    assert.equal(response.statusCode, 200);
-    const body = JSON.parse(response.body);
-    assert.equal(body.amount, '3659.93');
-    assert.match(body.fields.custom_str1, /W-BARBI-TAN:XS:2/);
-    assert.match(body.fields.custom_str1, /W-DENIM:S:1/);
-
-    const sold = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [{ name: 'I Need You Corset', qty: 1, size: 'S' }]
+            items: [{ name: 'Example top', price: 1, qty: 1, size: 'M' }]
         })
     }, { env: ENV });
-    assert.equal(sold.statusCode, 400);
-    assert.equal(JSON.parse(sold.body).error, 'I Need You Corset is sold out. Remove it from your cart.');
+    assert.equal(response.statusCode, 400);
+    assert.match(JSON.parse(response.body).error, /no longer available/);
 });
 
-test('checkout ignores the client price and does not add a delivery fee', async () => {
+test('checkout refuses an outfit that is not in the catalogue', async () => {
     const response = await handleCheckout({
         httpMethod: 'POST',
         body: JSON.stringify({
             customer: customer(),
-            items: [
-                outfitItem('FF-M-001', { top: 'M', jogger: 'L', shoe: '8' }),
-                { name: 'Boxy Top', price: 1, qty: 2, size: 'M' }
-            ]
+            items: [outfitItem('FF-M-001', { top: 'M' })]
         })
-    }, {
-        env: ENV,
-        now: new Date('2026-10-04T12:00:00Z'),
-        randomInt: () => 0
-    });
-    assert.equal(response.statusCode, 200);
-    const body = JSON.parse(response.body);
-    // 1050 + 250 * 2. Under R4,000, and the site states no other delivery fee.
-    assert.equal(body.amount, '1550.00');
-    assert.equal(body.orderRef, 'FF-261004-AAAA');
-    assert.equal(body.processUrl, 'https://sandbox.payfast.co.za/eng/process');
-    assert.equal(body.fields.amount, '1550.00');
-    assert.equal(body.fields.m_payment_id, 'FF-261004-AAAA');
-    assert.equal(body.fields.cell_number, '0672565980');
-    assert.equal(body.fields.return_url, 'https://fashforge.co.za/payment-success.html');
-    assert.equal(body.fields.cancel_url, 'https://fashforge.co.za/payment-cancelled.html');
-    assert.equal(body.fields.notify_url, 'https://fashforge.co.za/.netlify/functions/payfast-notify');
-    assert.match(body.fields.custom_str1, /FF-M-001:top=M,jogger=L,shoe=8:1/);
-    assert.match(body.fields.custom_str1, /M-TOP:M:2/);
-    assert.match(body.fields.custom_str1, /D:Johannesburg:2196/);
-    assert.match(body.fields.custom_str2, /0672565980/);
-    assert.equal(body.fields.custom_str3, 'Leave at reception');
+    }, { env: ENV });
+    assert.equal(response.statusCode, 400);
+    assert.match(JSON.parse(response.body).error, /no longer available/);
     assert.equal(response.body.includes(DOCS_PASSPHRASE), false);
-    const unsigned = Object.assign({}, body.fields);
-    delete unsigned.signature;
-    assert.equal(body.fields.signature, generateSignature(unsigned, DOCS_PASSPHRASE));
 });
 
-test('a long cart summary splits across PayFast custom fields and still reprices', () => {
-    const items = [
-        outfitItem('FF-M-001', { top: 'XXS', jogger: 'XXS', shoe: '7' }, 10),
-        outfitItem('FF-W-001', { top: 'XS', pants: 'XS' }, 10),
-        outfitItem('FF-W-002', { top: 'XL', pants: 'S', sneaker: '3' }, 10),
-        outfitItem('FF-W-003', { top: 'XXS', pants: 'S' }, 10),
-        outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '6' }, 10),
-        outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' }, 10),
-        outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' }, 10),
-        { name: 'Boxy Top', qty: 10, size: 'XXS' },
-        { name: 'Black Wide Leg Graphic Jogger', qty: 10, size: 'XXS' },
-        { name: 'Chunky Lace Up Skater Sneaker', qty: 10, size: '7' }
-    ];
-    const priced = priceCart(items);
-    const packed = packSummary(compactSummary(priced.lines, { city: 'Johannesburg', postalCode: '2196' }));
+test('a long summary still splits across PayFast custom fields', () => {
+    const summary = Array.from({ length: 22 }, (_, i) => 'PIECE-' + String(i).padStart(2, '0') + ':M:1').join('|');
+    assert.ok(summary.length > 255);
+    const packed = packSummary(summary);
     assert.ok(packed.custom_str1.length <= 255);
     assert.ok(packed.custom_str4.length <= 255);
-    const again = priceCart(parseSummary(readSummary(packed)).items);
-    assert.equal(again.totalCents, priced.totalCents);
-    assert.equal(again.deliveryFeeCents, 0);
-});
-
-test('an order over R4,000 is still charged the item total only', () => {
-    const priced = priceCart([
-        outfitItem('FF-W-002', { top: 'M', pants: 'S', sneaker: '7' }),
-        outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '6' })
-    ]);
-    assert.equal(priced.deliveryFeeCents, 0);
-    assert.equal(priced.totalCents, (4700 + 3300) * 100);
+    assert.equal(readSummary(packed), summary);
 });
 
 function readScriptConst(script, name) {
@@ -246,106 +149,17 @@ function readScriptConst(script, name) {
     return Function('return ' + script.slice(start + marker.length, end + 2))();
 }
 
-test('an empty size list means sold out, including a cart that already holds the set', async () => {
-    assert.equal(isSoldOut(14), true);
-    assert.equal(isSoldOut(15), true);
-    assert.equal(isSoldOut(16), false);
-    assert.deepEqual(STOCK[14], []);
-    assert.deepEqual(STOCK[15], []);
-
-    const stale = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [outfitItem('FF-W-006', { corset: 'S', jeans: '8', boot: '5' })]
-        })
-    }, { env: ENV });
-    assert.equal(stale.statusCode, 400);
-    const staleBody = JSON.parse(stale.body);
-    assert.equal(staleBody.error, 'Corset and Wide Leg Night Set is sold out. Remove it from your cart.');
-    assert.equal(staleBody.error.includes('\u2014'), false);
-
-    const noSizes = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [{ id: 'FF-W-006', qty: 1 }]
-        })
-    }, { env: ENV });
-    assert.equal(noSizes.statusCode, 400);
-    assert.equal(JSON.parse(noSizes.body).error, staleBody.error);
-
-    const mixed = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [
-                outfitItem('FF-M-001', { top: 'M', jogger: 'L', shoe: '9' }),
-                outfitItem('FF-W-006', { corset: 'XL', jeans: '10', boot: '5' })
-            ]
-        })
-    }, { env: ENV });
-    assert.equal(mixed.statusCode, 400);
-    assert.equal(JSON.parse(mixed.body).error, staleBody.error);
-
-    const badSize = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [outfitItem('FF-M-001', { top: 'XXL', jogger: 'L', shoe: '9' })]
-        })
-    }, { env: ENV });
-    assert.equal(badSize.statusCode, 400);
-    assert.match(JSON.parse(badSize.body).error, /in-stock size/);
-    assert.equal(JSON.parse(badSize.body).error.includes('sold out'), false);
-
-    const script = fs.readFileSync(path.join(ROOT, 'script.js'), 'utf8');
-    const outfits = readScriptConst(script, 'OUTFIT_PIECE_IDS');
-    const singles = readScriptConst(script, 'SINGLE_PIECE_IDS');
-    for (const [id, outfit] of Object.entries(OUTFITS)) {
-        assert.deepEqual(outfits[id], outfit.pieces.map((piece) => piece.stockId));
-    }
-    for (const [name, piece] of Object.entries(PIECES)) {
-        assert.equal(singles[name], piece.stockId);
-    }
-    assert.equal(script.includes('No sizes in stock.'), false);
-    assert.match(script, /is sold out\. Remove it from your cart\./);
-
-    const helpersEnd = script.indexOf("document.addEventListener('DOMContentLoaded'", script.indexOf('const PIECE_STOCK = '));
-    const client = Function(script.slice(script.indexOf('const PIECE_STOCK = '), helpersEnd) + `
-        return { pieceIsSoldOut, outfitIsSoldOut, cartLineSoldOut, soldOutCartMessage, PIECE_STOCK };
-    `)();
-    assert.equal(client.pieceIsSoldOut(14), true);
-    assert.equal(client.pieceIsSoldOut(15), true);
-    assert.equal(client.pieceIsSoldOut(16), false);
-    assert.equal(client.outfitIsSoldOut('FF-W-006'), true);
-    assert.equal(client.outfitIsSoldOut('FF-M-001'), false);
-    const staleLine = {
-        id: 'FF-W-006',
-        name: 'Corset and Wide Leg Night Set',
-        sizes: { corset: 'S', jeans: '8', boot: '5' }
-    };
-    assert.equal(client.cartLineSoldOut(staleLine), true);
-    assert.equal(client.soldOutCartMessage([staleLine]), staleBody.error);
-    assert.equal(client.cartLineSoldOut({ name: 'Boxy Top', size: 'M' }), false);
-    client.PIECE_STOCK.pieces[1].sizes = [];
-    assert.equal(
-        client.soldOutCartMessage([{ name: 'Boxy Top', size: 'M' }]),
-        'Boxy Top is sold out. Remove it from your cart.'
-    );
-    assert.equal(client.soldOutCartMessage([
-        staleLine,
-        { name: 'Boxy Top', size: 'M' }
-    ]), 'Some items are sold out. Remove them from your cart.');
-
+test('shop pages keep a coming-soon grid when the catalogue is empty', () => {
     const evening = fs.readFileSync(path.join(ROOT, 'women-evening.html'), 'utf8');
     const full = fs.readFileSync(path.join(ROOT, 'women-full-outfits.html'), 'utf8');
     const men = fs.readFileSync(path.join(ROOT, 'men-individual-pieces.html'), 'utf8');
-    assert.match(evening, /class="item-card outfit-card reveal" data-outfit-id="FF-W-006"/);
-    assert.match(full, /data-outfit-id="FF-W-006"/);
-    assert.match(men, /data-piece-id="1"/);
-    assert.match(men, /data-piece-id="2"/);
-    assert.match(men, /data-piece-id="3"/);
+    const ui = fs.readFileSync(path.join(ROOT, 'catalogue-ui.js'), 'utf8');
+    assert.match(evening, /data-catalogue-grid[^>]*data-style="evening"/);
+    assert.match(full, /data-catalogue-styles[^>]*data-gender="women"/);
+    assert.match(men, /data-catalogue-grid[^>]*data-kind="piece"[^>]*data-gender="men"/);
+    assert.match(ui, /New outfits coming soon/);
+    assert.match(ui, /instagram.com\/fashforge_official_account/);
+    assert.equal(isSoldOut(1), false);
 });
 
 test('unknown outfits, bad sizes, and missing config are rejected', async () => {
@@ -446,55 +260,52 @@ async function checkoutBody(items, env) {
     return JSON.parse(response.body);
 }
 
-test('a valid ITN is recorded only after signature, source, and amount checks', async () => {
-    const built = await checkoutBody([
-        outfitItem('FF-W-004', { cardigan: 'One size fits most', pants: 'One size fits most', sneaker: '8' })
-    ]);
-    assert.equal(built.amount, '3300.00');
-    assert.equal(built.fields.custom_str3, undefined);
+function signedNotice(overrides, passphrase) {
+    const data = Object.assign({
+        m_payment_id: 'FF-261004-AAAA',
+        pf_payment_id: '1089250',
+        payment_status: 'COMPLETE',
+        item_name: 'FashForge order',
+        amount_gross: '100.00',
+        custom_str1: 'v1|FF-W-999:top=M:1|D:Johannesburg:2196',
+        name_first: 'Anele',
+        name_last: 'Dlamini',
+        email_address: 'anele@example.co.za',
+        merchant_id: '10000100'
+    }, overrides);
+    const entries = Object.entries(data).filter(([, value]) => value !== undefined);
+    entries.push(['signature', itnSignature(entries, passphrase)]);
+    return entries.map(([key, value]) => phpUrlEncode(key) + '=' + phpUrlEncode(value)).join('&');
+}
+
+test('a paid notice for an unknown outfit is not recorded', async () => {
     const saved = [];
     const response = await handleNotify({
         httpMethod: 'POST',
         headers: { 'x-nf-client-connection-ip': '8.8.8.8' },
-        body: itnBody(built.fields, {}, DOCS_PASSPHRASE)
+        body: signedNotice({}, DOCS_PASSPHRASE)
     }, {
         env: ENV,
-        now: new Date('2026-10-04T12:00:00Z'),
         fetch: async () => ({ ok: true, text: async () => 'VALID' }),
         recordOrder: async (order) => { saved.push(order); }
     });
-    assert.equal(response.statusCode, 200);
-    assert.equal(saved.length, 1);
-    assert.equal(saved[0].orderRef, 'FF-261004-AAAA');
-    assert.equal(saved[0].status, 'PAID');
-    assert.equal(saved[0].total, '3300.00');
-    assert.equal(saved[0].deliveryFee, '0.00');
-    assert.equal(saved[0].customerName, 'Anele Dlamini');
-    assert.equal(saved[0].mobile, '0672565980');
-    assert.equal(saved[0].email, 'anele@example.co.za');
-    assert.match(saved[0].address, /12 Main Road, Rosebank, Johannesburg, Gauteng, 2196/);
-    assert.equal(saved[0].outfitIds, 'FF-W-004');
-    assert.match(saved[0].itemsWithSizes, /One size fits most/);
-    assert.equal(saved[0].payfastPaymentId, '1089250');
-    assert.deepEqual(rowFromOrder(saved[0]).length, HEADERS.length);
+    assert.equal(response.statusCode, 400);
+    assert.equal(saved.length, 0);
 });
 
 test('ITN source check accepts validate or, if that call fails, a PayFast IP', async () => {
-    const built = await checkoutBody([outfitItem('FF-M-001', { top: 'S', jogger: 'M', shoe: '8' })]);
     const base = {
         httpMethod: 'POST',
         headers: { 'x-nf-client-connection-ip': '41.74.179.194' },
-        body: itnBody(built.fields, {}, DOCS_PASSPHRASE)
+        body: signedNotice({ payment_status: 'CANCELLED' }, DOCS_PASSPHRASE)
     };
-    const saved = [];
     const byIp = await handleNotify(base, {
         env: ENV,
         fetch: async () => { throw new Error('network'); },
         isPayfastIp: async () => true,
-        recordOrder: async (order) => { saved.push(order); }
+        recordOrder: async () => { throw new Error('should not record'); }
     });
     assert.equal(byIp.statusCode, 200);
-    assert.equal(saved.length, 1);
 
     const invalid = await handleNotify(base, {
         env: ENV,
@@ -507,7 +318,7 @@ test('ITN source check accepts validate or, if that call fails, a PayFast IP', a
     const neither = await handleNotify({
         httpMethod: 'POST',
         headers: { 'x-forwarded-for': '41.74.179.194' },
-        body: itnBody(built.fields, {}, DOCS_PASSPHRASE)
+        body: signedNotice({ payment_status: 'CANCELLED' }, DOCS_PASSPHRASE)
     }, {
         env: ENV,
         fetch: async () => { throw new Error('network'); },
@@ -517,12 +328,11 @@ test('ITN source check accepts validate or, if that call fails, a PayFast IP', a
     assert.equal(neither.statusCode, 400);
 });
 
-test('a bad signature, a cancelled payment, and a wrong amount are not marked paid', async () => {
-    const built = await checkoutBody([outfitItem('FF-W-001', { top: 'M', pants: 'XS' })]);
+test('a bad signature and a cancelled payment are not marked paid', async () => {
     let fetches = 0;
     const badSig = await handleNotify({
         httpMethod: 'POST',
-        body: itnBody(built.fields, { amount_gross: '1.00' }, 'wrong-passphrase')
+        body: signedNotice({ amount_gross: '1.00' }, 'wrong-passphrase')
     }, {
         env: ENV,
         fetch: async () => { fetches += 1; return { ok: true, text: async () => 'VALID' }; },
@@ -533,23 +343,13 @@ test('a bad signature, a cancelled payment, and a wrong amount are not marked pa
 
     const cancelled = await handleNotify({
         httpMethod: 'POST',
-        body: itnBody(built.fields, { payment_status: 'CANCELLED' }, DOCS_PASSPHRASE)
+        body: signedNotice({ payment_status: 'CANCELLED' }, DOCS_PASSPHRASE)
     }, {
         env: ENV,
         fetch: async () => ({ ok: true, text: async () => 'VALID' }),
         recordOrder: async () => { throw new Error('should not record'); }
     });
     assert.equal(cancelled.statusCode, 200);
-
-    const cheap = await handleNotify({
-        httpMethod: 'POST',
-        body: itnBody(built.fields, { amount_gross: '1.00' }, DOCS_PASSPHRASE)
-    }, {
-        env: ENV,
-        fetch: async () => ({ ok: true, text: async () => 'VALID' }),
-        recordOrder: async () => { throw new Error('should not record'); }
-    });
-    assert.equal(cheap.statusCode, 400);
 });
 
 test('recordOrder logs without Google Sheets and does not throw when Sheets is misconfigured', async () => {
@@ -561,8 +361,8 @@ test('recordOrder logs without Google Sheets and does not throw when Sheets is m
         email: 'anele@example.co.za',
         mobile: '0672565980',
         address: '12 Main Road, Rosebank, Johannesburg, Gauteng, 2196',
-        outfitIds: 'FF-M-001',
-        itemsWithSizes: 'FF-M-001 Boxy Top Streetwear Set (Top M, Jogger L, Shoe 9) x1',
+        outfitIds: 'FF-W-001',
+        itemsWithSizes: 'FF-W-001 Example outfit (Top M) x1',
         total: '1050.00',
         payfastPaymentId: '1089250'
     };
@@ -589,63 +389,13 @@ test('recordOrder logs without Google Sheets and does not throw when Sheets is m
     ]);
 });
 
-test('removed tops are not sold alone, and their outfits still check out', async () => {
-    for (const name of [
-        'Fancy Button Linen Look Wrap Top, orange',
-        'Sleeveless Double Breasted Knit Top, taupe'
-    ]) {
-        const response = await handleCheckout({
-            httpMethod: 'POST',
-            body: JSON.stringify({
-                customer: customer(),
-                items: [{ name, qty: 1, size: 'XXS' }]
-            })
-        }, { env: ENV });
-        assert.equal(response.statusCode, 400);
-        assert.equal(JSON.parse(response.body).error, 'An item in the cart is no longer available.');
+test('old standalone product pages are not on the site', () => {
+    for (const file of ['product-orange-wrap-top.html', 'product-taupe-knit-top.html', 'product-orange-linen-coord.html', 'product-taupe-waistcoat-set.html']) {
+        assert.equal(fs.existsSync(path.join(ROOT, file)), false);
     }
-
-    const orange = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [outfitItem('FF-W-003', { top: 'XXS', pants: 'XS' })]
-        })
-    }, {
-        env: ENV,
-        now: new Date('2026-10-19T12:00:00Z'),
-        randomInt: () => 0
-    });
-    assert.equal(orange.statusCode, 200);
-    assert.equal(JSON.parse(orange.body).amount, '700.00');
-
-    const taupe = await handleCheckout({
-        httpMethod: 'POST',
-        body: JSON.stringify({
-            customer: customer(),
-            items: [outfitItem('FF-W-005', { top: 'XXS', pants: 'XS' })]
-        })
-    }, { env: ENV });
-    assert.equal(taupe.statusCode, 200);
-    assert.equal(JSON.parse(taupe.body).amount, '700.00');
-
-    assert.equal(fs.existsSync(path.join(ROOT, 'product-orange-wrap-top.html')), false);
-    assert.equal(fs.existsSync(path.join(ROOT, 'product-taupe-knit-top.html')), false);
     const listing = fs.readFileSync(path.join(ROOT, 'women-individual-pieces.html'), 'utf8');
     assert.equal(listing.includes('product-orange-wrap-top.html'), false);
     assert.equal(listing.includes('product-taupe-knit-top.html'), false);
-    assert.equal(listing.includes('Fancy Button Linen Look Wrap Top'), false);
-    assert.equal(listing.includes('Sleeveless Double Breasted Knit Top'), false);
-    const orangePage = fs.readFileSync(path.join(ROOT, 'product-orange-linen-coord.html'), 'utf8');
-    const taupePage = fs.readFileSync(path.join(ROOT, 'product-taupe-waistcoat-set.html'), 'utf8');
-    assert.match(orangePage, /data-outfit-id="FF-W-003"/);
-    assert.match(orangePage, /data-piece-id="8"/);
-    assert.equal(orangePage.includes('product-orange-wrap-top.html'), false);
-    assert.match(orangePage, /href="product-orange-culotte.html"/);
-    assert.match(taupePage, /data-outfit-id="FF-W-005"/);
-    assert.match(taupePage, /data-piece-id="13"/);
-    assert.equal(taupePage.includes('product-taupe-knit-top.html'), false);
-    assert.match(taupePage, /href="product-barbi-pant-stone.html"/);
     const sitemap = fs.readFileSync(path.join(ROOT, 'sitemap.xml'), 'utf8');
     assert.equal(sitemap.includes('product-orange-wrap-top'), false);
     assert.equal(sitemap.includes('product-taupe-knit-top'), false);
@@ -658,10 +408,18 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     const providerEnd = script.indexOf('const PIECE_STOCK');
     const provider = Function(script.slice(providerStart, providerEnd) + '\nreturn activePaymentProvider();')();
     assert.equal(provider, 'disabled');
-    assert.match(script, /Online payments are not available yet\. Our store is not taking orders for now, please check back soon\./);
+    assert.match(script, /Card payments are not available yet\. To place an order, use the button on the product page\./);
     assert.match(script, /Order on WhatsApp/);
     assert.match(script, /Pay by card/);
-    assert.match(script, /Free delivery on orders over R4,000\./);
+    assert.match(script, /Free delivery on orders of R2,000 or more\./);
+    const siteConfig = fs.readFileSync(path.join(ROOT, 'site-config.js'), 'utf8');
+    assert.match(siteConfig, /doorToDoor: 99/);
+    assert.match(siteConfig, /locker: 70/);
+    assert.match(siteConfig, /freeFrom: 2000/);
+    assert.match(siteConfig, /usualBusinessDays: \[3, 7\]/);
+    assert.match(siteConfig, /packDays: \[1, 2\]/);
+    assert.match(siteConfig, /courierDays: \[1, 3\]/);
+    assert.equal(fs.readFileSync(path.join(ROOT, 'delivery-policy.html'), 'utf8').includes('TODO(Mandla): confirm a typical delivery window'), false);
     assert.equal(script.includes('https://wa.me/27672565980?text='), true);
     for (const file of fs.readdirSync(ROOT)) {
         if (!file.endsWith('.html')) continue;

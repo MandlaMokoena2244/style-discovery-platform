@@ -57,11 +57,28 @@
 
     <p class="drops-note"><a href="brands.html">All brands</a></p>
 
-    <section class="section">
-        <div class="catalogue-empty">
-            <h2>Coming soon</h2>
-            <p>DE TIAMO pieces will be listed on this page when they are ready.</p>
-            <p><a href="brands.html">Back to brands</a></p>
+    <section class="section catalogue-shop" data-catalogue-filters data-filter-brand="DE TIAMO">
+        <div class="catalogue-toolbar" data-filter-toolbar hidden>
+            <button type="button" class="filter-open" data-filter-open>Filter</button>
+            <p class="filter-count" data-filter-count></p>
+            <button type="button" class="filter-clear" data-filter-clear>Clear all</button>
+        </div>
+        <div class="catalogue-layout">
+            <aside class="filter-panel" data-filter-panel hidden>
+                <div class="filter-panel-head">
+                    <h2>Filter</h2>
+                    <button type="button" class="filter-close" data-filter-close aria-label="Close filters">&times;</button>
+                </div>
+                <div data-filter-groups></div>
+            </aside>
+            <div class="filter-backdrop" data-filter-backdrop hidden></div>
+            <div class="catalogue-results">
+                <div class="catalogue-empty">
+                    <h2>Coming soon</h2>
+                    <p>DE TIAMO pieces will be listed on this page when they are ready.</p>
+                    <p><a href="brands.html">Back to brands</a></p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -113,6 +130,7 @@
 
     <script src="site-config.js"></script>
     <script src="catalogue-ui.js"></script>
+    <script src="catalogue-filters.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

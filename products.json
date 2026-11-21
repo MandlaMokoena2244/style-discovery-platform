@@ -4,6 +4,9 @@
       "brand": "Indie Nation",
       "name": "Gardenia Walk Shorts",
       "category": "men",
+      "department": "Men",
+      "productCategory": "Clothing",
+      "subcategory": "Shorts",
       "price": 745,
       "sizes": [
         "S",
@@ -33,6 +36,9 @@
       "brand": "Indie Nation",
       "name": "Hawk Moth Walk Shorts",
       "category": "men",
+      "department": "Men",
+      "productCategory": "Clothing",
+      "subcategory": "Shorts",
       "price": 645,
       "sizes": [
         "S",
@@ -62,6 +68,9 @@
       "brand": "Indie Nation",
       "name": "Skull & Dagger Tattoo Walk Shorts",
       "category": "men",
+      "department": "Men",
+      "productCategory": "Clothing",
+      "subcategory": "Shorts",
       "price": 645,
       "sizes": [
         "S",
@@ -91,6 +100,9 @@
       "brand": "Indie Nation",
       "name": "PUNK'S NOT DEAD UNISEX TEE",
       "category": "men",
+      "department": "Unisex",
+      "productCategory": "Clothing",
+      "subcategory": "T-shirts",
       "price": 395,
       "sizes": [
         "S",
@@ -121,6 +133,9 @@
       "brand": "Indie Nation",
       "name": "DEATH BEFORE DECAF BLACK UNISEX TEE",
       "category": "men",
+      "department": "Unisex",
+      "productCategory": "Clothing",
+      "subcategory": "T-shirts",
       "price": 420,
       "sizes": [
         "S",
@@ -153,6 +168,9 @@
       "brand": "Indie Nation",
       "name": "LOGO CAMPER CAP",
       "category": "men",
+      "department": "Unisex",
+      "productCategory": "Accessories",
+      "subcategory": "Caps",
       "price": 350,
       "sizes": [
         "One size"
@@ -178,6 +196,9 @@
       "brand": "Indie Nation",
       "name": "PINK EMBROIDERED SNAPBACK CAP",
       "category": "men",
+      "department": "Unisex",
+      "productCategory": "Accessories",
+      "subcategory": "Caps",
       "price": 350,
       "sizes": [
         "One size"
@@ -203,6 +224,9 @@
       "brand": "Indie Nation",
       "name": "HAWK MOTH SLEEPERS",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Accessories",
+      "subcategory": "Earrings",
       "price": 95,
       "sizes": [
         "One size"
@@ -230,6 +254,9 @@
       "brand": "Indie Nation",
       "name": "Fluffy Boucle Baby Moccasins Cream",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Footwear",
+      "subcategory": "Shoes",
       "price": 480,
       "sizes": [
         "3-6 months",
@@ -259,6 +286,9 @@
       "brand": "Indie Nation",
       "name": "Fluffy Boucle Baby Moccasins Camel",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Footwear",
+      "subcategory": "Shoes",
       "price": 480,
       "sizes": [
         "3-6 months",
@@ -288,6 +318,9 @@
       "brand": "Indie Nation",
       "name": "Leather Baby Vellies Grey",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Footwear",
+      "subcategory": "Shoes",
       "price": 480,
       "sizes": [
         "3-6 months",
@@ -317,6 +350,9 @@
       "brand": "Indie Nation",
       "name": "Leather Baby Vellies Tan",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Footwear",
+      "subcategory": "Shoes",
       "price": 480,
       "sizes": [
         "3-6 months",
@@ -346,6 +382,9 @@
       "brand": "LilyCo",
       "name": "Amanda Linen Dress",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Dresses",
       "price": 550,
       "sizes": [
         "XS",
@@ -381,6 +420,9 @@
       "brand": "LilyCo",
       "name": "Gingham Maxi Dress",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Dresses",
       "price": 279,
       "sizes": [
         "XS",
@@ -413,6 +455,9 @@
       "brand": "LilyCo",
       "name": "Stripe Balloon Pants",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Pants",
       "price": 350,
       "sizes": [
         "XS",
@@ -445,6 +490,9 @@
       "brand": "LilyCo",
       "name": "Balloon Pants",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Pants",
       "price": 250,
       "sizes": [
         "XS",
@@ -490,6 +538,9 @@
       "brand": "LilyCo",
       "name": "Linen Spaghetti strap top",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Tops",
       "price": 199,
       "sizes": [
         "XS",
@@ -535,6 +586,9 @@
       "brand": "LilyCo",
       "name": "Classic Linen Shorts",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Shorts",
       "price": 250,
       "sizes": [
         "XS",
@@ -580,6 +634,9 @@
       "brand": "LilyCo",
       "name": "Black Linen Side Tie Blouse",
       "category": "women",
+      "department": "Women",
+      "productCategory": "Clothing",
+      "subcategory": "Tops",
       "price": 299,
       "sizes": [
         "XS",
@@ -625,6 +682,9 @@
       "brand": "LilyCo",
       "name": "Mia Linen dress",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Clothing",
+      "subcategory": "Dresses",
       "price": 350,
       "sizes": [
         "0-6 months",
@@ -673,6 +733,9 @@
       "brand": "LilyCo",
       "name": "Girls Red Linen Dress",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Clothing",
+      "subcategory": "Dresses",
       "price": 299,
       "sizes": [
         "6-12 months",
@@ -706,6 +769,9 @@
       "brand": "LilyCo",
       "name": "Muslin Cotton Short Set",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Clothing",
+      "subcategory": "Sets",
       "price": 350,
       "sizes": [
         "1-2Y",
@@ -747,6 +813,9 @@
       "brand": "LilyCo",
       "name": "Girls Cotton Short Set",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Clothing",
+      "subcategory": "Sets",
       "price": 299,
       "sizes": [
         "0-3m",
@@ -780,6 +849,9 @@
       "brand": "LilyCo",
       "name": "Girls Linen Shorts",
       "category": "kids",
+      "department": "Kids",
+      "productCategory": "Clothing",
+      "subcategory": "Shorts",
       "price": 150,
       "sizes": [
         "1-2Y",

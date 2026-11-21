@@ -83,9 +83,21 @@
             '</div></a>';
     }
 
+    function listAttr(values) {
+        return escapeHtml((Array.isArray(values) ? values : []).join('|'));
+    }
+
     function pieceCard(product) {
         const extra = product.cardClass ? ' ' + product.cardClass : '';
-        return '<a href="' + escapeHtml(hrefFor(product)) + '" class="item-card piece-card' + extra + '" data-piece-id="' + escapeHtml(product.stockId) + '">' +
+        return '<a href="' + escapeHtml(hrefFor(product)) + '" class="item-card piece-card' + extra + '"' +
+            ' data-piece-id="' + escapeHtml(product.stockId) + '"' +
+            ' data-department="' + escapeHtml(product.department || '') + '"' +
+            ' data-product-category="' + escapeHtml(product.productCategory || '') + '"' +
+            ' data-subcategory="' + escapeHtml(product.subcategory || '') + '"' +
+            ' data-sizes="' + listAttr(product.sizes) + '"' +
+            ' data-colours="' + listAttr(product.colours) + '"' +
+            ' data-price="' + escapeHtml(product.price) + '"' +
+            ' data-store="' + escapeHtml(product.brand || '') + '">' +
             '<div class="piece-frame">' +
             imageHtml(product.images, product.imageAlt || product.name, true) +
             '</div>' +
@@ -322,6 +334,7 @@
         renderStyles(catalogue);
         renderBrands(catalogue);
         renderProductPage(catalogue);
+        document.dispatchEvent(new CustomEvent('fashforge:catalogue', { detail: catalogue }));
     };
 
     window.lookupFashforgeSellable = function(catalogue, button) {

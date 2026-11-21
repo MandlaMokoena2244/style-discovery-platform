@@ -120,34 +120,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Contact form posts to Netlify Forms. WhatsApp on the contact page is only for queries.
+    // Contact form posts to Web3Forms. WhatsApp on the contact page is only for queries.
     const contactForm = document.querySelector('.contact-form form');
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;
             const button = form.querySelector('[type="submit"]');
-            const error = form.querySelector('.form-error');
-            if (error) error.remove();
+            const error = document.getElementById('contact-error');
+            const thanks = document.getElementById('contact-thanks');
+            if (error) {
+                error.hidden = true;
+                error.textContent = '';
+            }
             if (button) button.disabled = true;
-            const body = new URLSearchParams(new FormData(form)).toString();
-            fetch('/', {
+            const payload = Object.fromEntries(new FormData(form).entries());
+            fetch('https://api.web3forms.com/submit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: body
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
             }).then(function(response) {
-                const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                if (!response.ok && !local) throw new Error('send failed');
+                return response.json();
+            }).then(function(data) {
+                if (!data || data.success !== true) throw new Error('send failed');
                 form.hidden = true;
-                const thanks = document.getElementById('contact-thanks');
                 if (thanks) thanks.hidden = false;
             }).catch(function() {
                 if (button) button.disabled = false;
-                const note = document.createElement('p');
-                note.className = 'form-error';
-                note.setAttribute('role', 'alert');
-                note.textContent = 'We could not send your message just now. Please try again, or WhatsApp us on +27 67 256 5980.';
-                form.appendChild(note);
+                if (error) {
+                    error.hidden = false;
+                    error.textContent = 'We could not send your message just now. Please try again, or WhatsApp us on +27 67 256 5980.';
+                }
             });
         });
     }
@@ -166,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // 'whatsapp' keeps Order on WhatsApp.
 // 'payfast' replaces that button with the card checkout form.
 // There is no WhatsApp order button while this is 'payfast' or 'disabled'.
-// The contact form is a Netlify Form and does not follow this switch.
+// The contact form posts to Web3Forms and does not follow this switch.
 // WhatsApp on the contact page is for queries only.
 // ============================================
 const PAYMENT_PROVIDER = 'disabled';

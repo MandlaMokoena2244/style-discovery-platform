@@ -1,7 +1,7 @@
 # style-discovery-platform
 A fashion discovery platform that helps users explore clothing styles and connect to retail products through a curated browsing experience.
 
-The public catalogue in `products.json` is empty. Men, Women, Kids, and the style pages show a "New outfits coming soon" note until outfits are added. Do not publish a brand until FashForge has an agreement with that brand.
+Indie Nation and LilyCo pieces live in `products.json` and are listed on their brand pages only. Men, Women, Kids, and the homepage stay on "New pieces coming soon" until those pieces are placed there. DE TIAMO has a brand page and no products yet. Do not publish any other brand.
 
 ## Adding a product
 
@@ -71,7 +71,7 @@ Ordering is paused until you change one switch. In `script.js`:
 const PAYMENT_PROVIDER = 'disabled'; // 'whatsapp' or 'payfast' when the store should take orders again
 ```
 
-- `disabled` (current): the cart does not take card or cart checkout. On a product page, Buy opens `paymentLink` when one is set in `products.json`. Otherwise the button sends an order on WhatsApp with the product name and size. Card checkout stays off.
+- `disabled` (current): the cart does not take payment. Shoppers can save pieces, and the cart says checkout is coming soon. The checkout button stays disabled. Card checkout and WhatsApp ordering stay off.
 - `whatsapp`: the cart shows Order on WhatsApp.
 - `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Web3Forms and does not follow this switch. WhatsApp on the contact page is for queries.
 

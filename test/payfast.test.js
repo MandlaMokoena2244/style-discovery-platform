@@ -88,13 +88,21 @@ test('blank fields are skipped and an empty passphrase is not appended', () => {
     );
 });
 
-test('the public catalogue is empty and old product pages are gone', () => {
-    assert.deepEqual(OUTFITS, {});
-    assert.deepEqual(PIECES, {});
-    assert.deepEqual(STOCK, {});
+test('the public catalogue lists signed brands only, and old product pages are gone', () => {
     const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'products.json'), 'utf8'));
-    assert.deepEqual(data.products, []);
     assert.deepEqual(data.outfits, []);
+    assert.ok(data.products.length >= 8);
+    const brands = new Set(data.products.map((product) => product.brand));
+    assert.deepEqual(brands, new Set(['Indie Nation', 'LilyCo']));
+    data.products.forEach((product) => {
+        assert.ok(['women', 'men', 'kids'].includes(product.category), product.name);
+        assert.equal(product.placement, 'brand');
+        assert.match(product.sourceUrl, /^https:\/\/(www\.)?(indienation|lilycodesigns)\.co\.za\//);
+        assert.ok(product.price > 0 && product.price < 10000, product.name);
+        assert.ok(product.sizes.length > 0, product.name);
+    });
+    assert.equal(Object.keys(STOCK).length, data.products.length);
+    assert.equal(Object.keys(PIECES).length, data.products.length);
     const pages = fs.readdirSync(ROOT).filter((name) => name.startsWith('product-') && name.endsWith('.html'));
     assert.deepEqual(pages, []);
     assert.equal(fs.existsSync(path.join(ROOT, 'product.html')), true);
@@ -408,7 +416,7 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     const providerEnd = script.indexOf('const PIECE_STOCK');
     const provider = Function(script.slice(providerStart, providerEnd) + '\nreturn activePaymentProvider();')();
     assert.equal(provider, 'disabled');
-    assert.match(script, /Card payments are not available yet\. To place an order, use the button on the product page\./);
+    assert.match(script, /We're not taking payments yet\. Online checkout is coming soon — you can save items in your cart and check back shortly\./);
     assert.match(script, /Order on WhatsApp/);
     assert.match(script, /Pay by card/);
     assert.match(script, /Free delivery on orders of R2,000 or more\./);

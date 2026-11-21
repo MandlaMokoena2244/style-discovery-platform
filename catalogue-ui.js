@@ -64,7 +64,7 @@
 
     function emptyHtml(title, text) {
         return '<div class="catalogue-empty">' +
-            '<h2>' + escapeHtml(title || 'New outfits coming soon') + '</h2>' +
+            '<h2>' + escapeHtml(title || 'New pieces coming soon') + '</h2>' +
             '<p>' + escapeHtml(text || 'Follow us on Instagram for the first drop.') + '</p>' +
             '<p><a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">@fashforge_official_account</a></p>' +
             '</div>';
@@ -90,7 +90,7 @@
             imageHtml(product.images, product.imageAlt || product.name, true) +
             '</div>' +
             '<div class="item-info">' +
-            '<p class="item-brand">Brand: ' + escapeHtml(product.brand) + '</p>' +
+            '<p class="item-brand">by ' + escapeHtml(product.brand) + '</p>' +
             '<h3>' + escapeHtml(product.name) + '</h3>' +
             '<p class="item-price">' + formatRand(product.price) + '</p>' +
             '</div></a>';
@@ -105,9 +105,15 @@
             const style = grid.dataset.style || '';
             let html = '';
             if (kind === 'piece') {
+                const brand = grid.dataset.brand || '';
                 const pieces = products.filter(function(product) {
                     if (product.sellAlone === false) return false;
                     if (product.price == null) return false;
+                    if (brand) {
+                        if (product.brand !== brand) return false;
+                    } else if (product.placement === 'brand') {
+                        return false;
+                    }
                     if (gender && product.category !== gender) return false;
                     if (style && product.style !== style) return false;
                     return true;
@@ -251,10 +257,14 @@
         const name = isOutfit ? outfit.title : product.name;
         const price = isOutfit ? outfit.totalPrice : product.price;
         const brand = item.brand || '';
-        document.title = name + ' | FashForge';
-        const description = item.description || (name + ' from ' + brand + ', styled by FashForge.');
+        document.title = name + ' by ' + brand + ' | FashForge';
+        const description = item.description || (name + ' by ' + brand + '.');
         const meta = document.querySelector('meta[name="description"]');
         if (meta) meta.setAttribute('content', description);
+        const ogTitle = document.querySelector('meta[property="og:title"]');
+        if (ogTitle) ogTitle.setAttribute('content', name + ' by ' + brand + ' | FashForge');
+        const ogDescription = document.querySelector('meta[property="og:description"]');
+        if (ogDescription) ogDescription.setAttribute('content', description);
         const canonical = document.querySelector('link[rel="canonical"]');
         if (canonical) canonical.setAttribute('href', 'https://fashforge.co.za/product.html?id=' + encodeURIComponent(id));
 
@@ -269,7 +279,12 @@
 
         const dataOutfit = isOutfit ? ' data-outfit-id="' + escapeHtml(outfit.id) + '"' : '';
         const dataSingle = isOutfit ? '' : ' data-single-size="true"';
-        const back = (isOutfit ? outfit.stylePage : '') || (product && product.category === 'women' ? 'women.html' : product && product.category === 'kids' ? 'kids.html' : 'men.html');
+        const brandPages = {
+            'Indie Nation': 'brand-indie-nation.html',
+            'LilyCo': 'brand-lilyco.html',
+            'DE TIAMO': 'brand-de-tiamo.html'
+        };
+        const back = brandPages[brand] || (isOutfit ? outfit.stylePage : '') || (product && product.category === 'women' ? 'women.html' : product && product.category === 'kids' ? 'kids.html' : 'men.html');
 
         mount.innerHTML =
             '<div class="product-detail-inner">' +
@@ -279,9 +294,12 @@
             '</div>' +
             '<div class="product-info-col">' +
             (isOutfit ? '<p class="outfit-id">Outfit ID: ' + escapeHtml(outfit.id) + '</p>' : '') +
-            '<p class="product-brand">Brand: ' + escapeHtml(brand) + '</p>' +
+            '<p class="product-brand">by ' + escapeHtml(brand) + '</p>' +
             '<h1 class="product-name">' + escapeHtml(name) + '</h1>' +
             '<p class="product-price">' + formatRand(price) + '</p>' +
+            ( !isOutfit && product.colours && product.colours.length
+                ? '<p class="product-note">Colours: ' + escapeHtml(product.colours.join(', ')) + '</p>'
+                : '' ) +
             '<p class="product-note">' + escapeHtml(description) + '</p>' +
             '<div class="product-divider"></div>' +
             sizes +
@@ -292,8 +310,8 @@
             '<button class="qty-btn" id="qty-plus" type="button">+</button>' +
             '</div>' +
             '<button class="btn-add-cart" id="add-to-cart"' + dataOutfit + dataSingle +
-            ' data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">Buy</button>' +
-            '<p class="product-note"><a href="' + escapeHtml(back) + '">Back to the collection</a></p>' +
+            ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">Add to cart</button>' +
+            '<p class="product-note"><a href="' + escapeHtml(back) + '">Back to ' + escapeHtml(brand || 'the collection') + '</a></p>' +
             '</div></div>';
     }
 

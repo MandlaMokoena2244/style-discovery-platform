@@ -2025,6 +2025,9 @@ h1, h2, h3, h4 {
     opacity: 0.6;
     cursor: wait;
 }
+.btn-checkout.is-paused:disabled {
+    cursor: not-allowed;
+}
 @media (max-width: 480px) {
     .cart-drawer.is-checkout {
         width: 100vw;

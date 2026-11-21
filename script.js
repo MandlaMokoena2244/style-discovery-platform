@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // WhatsApp on the contact page is for queries only.
 // ============================================
 const PAYMENT_PROVIDER = 'disabled';
-const ORDERS_PAUSED_NOTICE = 'Card payments are not available yet. To place an order, use the button on the product page.';
+const ORDERS_PAUSED_NOTICE = "We're not taking payments yet. Online checkout is coming soon — you can save items in your cart and check back shortly.";
 
 function activePaymentProvider() {
     if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
@@ -247,6 +247,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         catalogue = null;
     }
     if (catalogue && window.renderFashforgeCatalogue) {
+        (catalogue.products || []).forEach(function(product) {
+            if (product.stockId == null) return;
+            PIECE_STOCK.pieces[product.stockId] = { sizes: Array.isArray(product.sizes) ? product.sizes.slice() : [] };
+            if (product.name) SINGLE_PIECE_IDS[product.name] = product.stockId;
+        });
+        (catalogue.outfits || []).forEach(function(outfit) {
+            OUTFIT_PIECE_IDS[outfit.id] = (outfit.pieces || []).map(function(piece) { return piece.stockId; });
+        });
         window.renderFashforgeCatalogue(catalogue);
     }
 
@@ -291,9 +299,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const buyButton = document.getElementById('add-to-cart');
     if (buyButton && !buyButton.disabled) {
-        const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, buyButton) : null;
-        const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
-        buyButton.textContent = paymentLink ? 'Buy' : 'Order on WhatsApp';
+        if (activePaymentProvider() === 'disabled') {
+            buyButton.textContent = 'Add to cart';
+        } else {
+            const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, buyButton) : null;
+            const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
+            buyButton.textContent = paymentLink ? 'Buy' : 'Order on WhatsApp';
+        }
     }
 
     function placeSoldOutBadge(card) {
@@ -417,7 +429,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 ${ordersDisabled
-                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p>'
+                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout coming soon</button>'
                     : '<button class="btn-checkout" id="checkout-btn" type="' + (payfastOn ? 'submit' : 'button') + '"' + (payfastOn ? ' form="checkout-form"' : '') + '>' + (payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
@@ -755,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
-        insertDeliveryChoice(addBtn);
+        if (activePaymentProvider() !== 'disabled') insertDeliveryChoice(addBtn);
         const pieceLabels = {};
         addBtn.addEventListener('click', () => {
             if (addBtn.disabled || productSoldOut) return;
@@ -773,6 +785,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             if (missing) {
                 alert('Please select a size for: ' + missing);
+                return;
+            }
+
+            if (activePaymentProvider() === 'disabled') {
+                const qtyField = document.getElementById('qty');
+                const qty = qtyField ? Math.max(1, parseInt(qtyField.value, 10) || 1) : 1;
+                const sizeValues = Object.keys(sizes).map(function(key) { return sizes[key]; });
+                window.addToCart({
+                    id: addBtn.dataset.outfitId || addBtn.dataset.id || '',
+                    name: addBtn.dataset.name || 'this piece',
+                    brand: addBtn.dataset.brand || '',
+                    price: Number(addBtn.dataset.price) || 0,
+                    qty: qty,
+                    sizes: sizes,
+                    size: sizeValues.join(', ')
+                });
                 return;
             }
 

@@ -87,6 +87,95 @@
         return escapeHtml((Array.isArray(values) ? values : []).join('|'));
     }
 
+    function productImages(item) {
+        if (item && Array.isArray(item.images) && item.images.length) return item.images;
+        if (item && item.image) return [item.image];
+        return [];
+    }
+
+    function imageAltAt(item, index, fallback) {
+        const alts = item && Array.isArray(item.imageAlts) ? item.imageAlts : [];
+        return alts[index] || (index === 0 && item && item.imageAlt) || fallback;
+    }
+
+    function cardFrame(product) {
+        const images = productImages(product);
+        let html = '<div class="piece-frame">' +
+            imageHtml(images.slice(0, 1), product.imageAlt || product.name, true);
+        if (images.length > 1) {
+            html += '<img class="card-hover-image" src="' + escapeHtml(images[1]) + '" alt="" aria-hidden="true">';
+        }
+        return html + '</div>';
+    }
+
+    function galleryHtml(item, name) {
+        const images = productImages(item);
+        if (!images.length) return '';
+        const thumbs = images.map(function(src, index) {
+            const alt = imageAltAt(item, index, name + ', photo ' + (index + 1));
+            return '<button type="button" class="gallery-thumb' + (index === 0 ? ' is-active' : '') + '"' +
+                ' data-src="' + escapeHtml(src) + '" data-alt="' + escapeHtml(alt) + '"' +
+                ' aria-label="' + escapeHtml(alt) + '" aria-pressed="' + (index === 0 ? 'true' : 'false') + '">' +
+                '<img src="' + escapeHtml(src) + '" alt="">' +
+                '</button>';
+        }).join('');
+        const mainAlt = imageAltAt(item, 0, name);
+        return '<div class="product-gallery" data-product-gallery>' +
+            '<div class="gallery-stage" tabindex="0">' +
+            (images.length > 1
+                ? '<button type="button" class="gallery-nav gallery-prev" aria-label="Previous photo">&#8249;</button>' +
+                  '<button type="button" class="gallery-nav gallery-next" aria-label="Next photo">&#8250;</button>'
+                : '') +
+            '<img class="gallery-main" src="' + escapeHtml(images[0]) + '" alt="' + escapeHtml(mainAlt) + '">' +
+            '</div>' +
+            (images.length > 1 ? '<div class="gallery-thumbs">' + thumbs + '</div>' : '') +
+            '</div>';
+    }
+
+    function bindGallery(root) {
+        const gallery = root.querySelector('[data-product-gallery]');
+        if (!gallery) return;
+        const main = gallery.querySelector('.gallery-main');
+        const stage = gallery.querySelector('.gallery-stage');
+        const thumbs = Array.prototype.slice.call(gallery.querySelectorAll('.gallery-thumb'));
+        if (!main || !thumbs.length) return;
+        let index = 0;
+        let touchX = null;
+        function show(next) {
+            index = (next + thumbs.length) % thumbs.length;
+            const thumb = thumbs[index];
+            main.src = thumb.getAttribute('data-src');
+            main.alt = thumb.getAttribute('data-alt') || '';
+            thumbs.forEach(function(button, i) {
+                const on = i === index;
+                button.classList.toggle('is-active', on);
+                button.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            thumb.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
+        thumbs.forEach(function(button, i) {
+            button.addEventListener('click', function() { show(i); });
+        });
+        const prev = gallery.querySelector('.gallery-prev');
+        const next = gallery.querySelector('.gallery-next');
+        if (prev) prev.addEventListener('click', function() { show(index - 1); });
+        if (next) next.addEventListener('click', function() { show(index + 1); });
+        stage.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowRight') { event.preventDefault(); show(index + 1); }
+            if (event.key === 'ArrowLeft') { event.preventDefault(); show(index - 1); }
+        });
+        stage.addEventListener('touchstart', function(event) {
+            touchX = event.changedTouches[0].clientX;
+        }, { passive: true });
+        stage.addEventListener('touchend', function(event) {
+            if (touchX == null) return;
+            const delta = event.changedTouches[0].clientX - touchX;
+            touchX = null;
+            if (Math.abs(delta) < 40) return;
+            show(delta < 0 ? index + 1 : index - 1);
+        }, { passive: true });
+    }
+
     function pieceCard(product) {
         const extra = product.cardClass ? ' ' + product.cardClass : '';
         return '<a href="' + escapeHtml(hrefFor(product)) + '" class="item-card piece-card' + extra + '"' +
@@ -98,9 +187,7 @@
             ' data-colours="' + listAttr(product.colours) + '"' +
             ' data-price="' + escapeHtml(product.price) + '"' +
             ' data-store="' + escapeHtml(product.brand || '') + '">' +
-            '<div class="piece-frame">' +
-            imageHtml(product.images, product.imageAlt || product.name, true) +
-            '</div>' +
+            cardFrame(product) +
             '<div class="item-info">' +
             '<p class="item-brand">by ' + escapeHtml(product.brand) + '</p>' +
             '<h3>' + escapeHtml(product.name) + '</h3>' +
@@ -302,7 +389,7 @@
             '<div class="product-detail-inner">' +
             '<div class="product-image-col">' +
             (isOutfit && outfit.tag ? '<span class="item-tag">' + escapeHtml(outfit.tag) + '</span>' : '') +
-            imageHtml(item.images, item.imageAlt || name, false) +
+            galleryHtml(item, name) +
             '</div>' +
             '<div class="product-info-col">' +
             (isOutfit ? '<p class="outfit-id">Outfit ID: ' + escapeHtml(outfit.id) + '</p>' : '') +
@@ -325,6 +412,7 @@
             ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">Add to cart</button>' +
             '<p class="product-note"><a href="' + escapeHtml(back) + '">Back to ' + escapeHtml(brand || 'the collection') + '</a></p>' +
             '</div></div>';
+        bindGallery(mount);
     }
 
     window.renderFashforgeCatalogue = function(catalogue) {

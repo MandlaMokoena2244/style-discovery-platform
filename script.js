@@ -73,8 +73,57 @@ function insertDeliveryChoice(button) {
     button.insertAdjacentElement('beforebegin', field);
 }
 
+function ensureSiteNav() {
+    var navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    var links = navbar.querySelector('.nav-links');
+    if (!links) {
+        links = document.createElement('ul');
+        links.className = 'nav-links';
+        var cart = navbar.querySelector('.cart-btn');
+        if (cart) navbar.insertBefore(links, cart);
+        else navbar.appendChild(links);
+    }
+    links.innerHTML =
+        '<li><a href="index.html">Home</a></li>' +
+        '<li><a href="men.html">Men</a></li>' +
+        '<li><a href="women.html">Women</a></li>' +
+        '<li><a href="kids.html">Kids</a></li>' +
+        '<li><a href="brands.html">Brands</a></li>';
+    if (!navbar.querySelector('.cart-btn')) {
+        var button = document.createElement('button');
+        button.className = 'cart-btn';
+        button.id = 'cart-btn';
+        button.setAttribute('aria-label', 'Open cart');
+        button.innerHTML = '<span class="cart-count" id="cart-count">0</span>';
+        navbar.appendChild(button);
+    }
+    if (!navbar.querySelector('.hamburger')) {
+        var burger = document.createElement('div');
+        burger.className = 'hamburger';
+        burger.innerHTML = '<span></span><span></span><span></span>';
+        navbar.appendChild(burger);
+    }
+    var file = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    var active = '';
+    if (!file || file === 'index.html') active = 'index.html';
+    else if (file.indexOf('men') === 0) active = 'men.html';
+    else if (file.indexOf('women') === 0) active = 'women.html';
+    else if (file.indexOf('kids') === 0) active = 'kids.html';
+    else if (file.indexOf('brand') === 0) active = 'brands.html';
+    links.querySelectorAll('a').forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (href === active) {
+            link.setAttribute('aria-current', 'page');
+        } else {
+            link.removeAttribute('aria-current');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     applySiteDetails();
+    ensureSiteNav();
 
     // Navbar scroll effect
     const navbar = document.querySelector('.navbar');

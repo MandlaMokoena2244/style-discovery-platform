@@ -3,13 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Women's evening outfits styled by FashForge, including the Corset and Wide Leg Night Set.">
+    <meta name="description" content="Women's evening outfits styled by FashForge. New outfits coming soon.">
     <meta property="og:title" content="Women - Evening | FashForge">
-    <meta property="og:description" content="Women's evening outfits styled by FashForge, including the Corset and Wide Leg Night Set.">
+    <meta property="og:description" content="Women's evening outfits styled by FashForge. New outfits coming soon.">
     <meta property="og:url" content="https://fashforge.co.za/women-evening.html">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
+    <meta property="og:image:alt" content="FashForge">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Women - Evening | FashForge">
+    <meta name="twitter:description" content="Women's evening outfits styled by FashForge. New outfits coming soon.">
+    <meta name="twitter:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
     <link rel="canonical" href="https://fashforge.co.za/women-evening.html">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <title>Women - Evening | FashForge</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,11 +28,14 @@
 
 <!-- NAVBAR -->
 <nav class="navbar scrolled">
-    <a href="index.html" class="logo">FashForge</a>
+    <a href="index.html" class="logo"><img src="images/logo-mark-white.png" alt="FashForge"></a>
     <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="women.html">Women</a></li>
-    </ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="men.html">Men</a></li>
+            <li><a href="women.html">Women</a></li>
+            <li><a href="kids.html">Kids</a></li>
+            <li><a href="brands.html">Brands</a></li>
+        </ul>
     <button class="cart-btn" id="cart-btn" aria-label="Open cart">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
@@ -50,25 +61,14 @@
 </section>
 
 <!-- PRODUCTS GRID -->
-<section class="items-grid">
-
-    <a href="product-corset-wide-leg-night-set.html" class="item-card outfit-card reveal" data-outfit-id="FF-W-006">
-        <span class="item-tag">3 Pieces</span>
-        <img src="images/women-ff-w-006.jpg" alt="Corset and Wide Leg Night Set: black corset, wide leg jeans, and black boots, with each piece shown beside the model">
-        <div class="item-info">
-            <p class="item-brand">Brand: Sissy Boy</p>
-            <h3>Corset and Wide Leg Night Set</h3>
-            <p class="item-id">FF-W-006</p>
-            <p class="item-price">R5,500.00</p>
-        </div>
-    </a>
-</section>
+<section class="items-grid" data-catalogue-grid data-kind="outfit" data-gender="women" data-style="evening" aria-label="Evening outfits"></section>
+<noscript><p class="drops-note">Turn on JavaScript to see this collection.</p></noscript>
 
 <!-- FOOTER -->
 <footer class="footer">
     <div class="footer-grid">
         <div class="footer-brand">
-            <h3>FashForge</h3>
+            <a href="index.html" class="footer-logo"><img src="images/logo-full-white.png" alt="FashForge"></a>
             <p>South African outfit styling. Complete looks from South African brands, with new men's and women's looks every week.</p>
         </div>
         <div class="footer-col">
@@ -91,8 +91,9 @@
             <h4>Policies</h4>
             <ul>
                 <li><a href="terms-and-conditions.html">Terms and Conditions</a></li>
-                <li><a href="refunds-and-cancellations.html">Refunds and Cancellations</a></li>
-                <li><a href="delivery-policy.html">Delivery Policy</a></li>
+                <li><a href="refunds-and-cancellations.html">Returns</a></li>
+                <li><a href="delivery-policy.html">Shipping</a></li>
+                <li><a href="privacy.html">Privacy</a></li>
             </ul>
         </div>
         <div class="footer-col">
@@ -103,10 +104,15 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; 2026 FashForge</p>
-    </div>
+            <p>&copy; 2026 <span data-site-legal>FashForge (Pty) Ltd</span> · Est. 2026</p>
+            <p>Registration number <span data-site-reg>2026/919971/07</span></p>
+            <p><span data-site-address>1064 Cornelius Street, Weltevredenpark, Roodepoort, Gauteng, 1709</span></p>
+            <p>Email <a data-site-email href="mailto:hello@fashforge.co.za">hello@fashforge.co.za</a></p>
+        </div>
 </footer>
 
+<script src="site-config.js"></script>
+<script src="catalogue-ui.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

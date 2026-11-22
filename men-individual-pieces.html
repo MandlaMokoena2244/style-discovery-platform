@@ -62,13 +62,27 @@
 
 <p class="drops-note">New drops every week — follow us on Instagram <a href="https://www.instagram.com/fashforge_official_account/" target="_blank" rel="noopener noreferrer">@fashforge_official_account</a></p>
 
-<section class="pieces-intro">
-    <span class="section-label">Collection</span>
-    <h2>New outfits coming soon</h2>
-    <p>Pieces will be listed here when new outfits are added.</p>
+<section class="section catalogue-shop" data-catalogue-filters data-filter-departments="Men,Unisex" data-filter-sections="store,department,category,subcategory,size,colour,price">
+    <div class="catalogue-toolbar" data-filter-toolbar hidden>
+        <button type="button" class="filter-open" data-filter-open>Filter</button>
+        <p class="filter-count" data-filter-count></p>
+        <button type="button" class="filter-clear" data-filter-clear>Clear all</button>
+    </div>
+    <div class="catalogue-layout">
+        <aside class="filter-panel" data-filter-panel hidden>
+            <div class="filter-panel-head">
+                <h2>Filter</h2>
+                <button type="button" class="filter-close" data-filter-close aria-label="Close filters">&times;</button>
+            </div>
+            <div data-filter-groups></div>
+        </aside>
+        <div class="filter-backdrop" data-filter-backdrop hidden></div>
+        <div class="catalogue-results">
+            <div class="items-grid piece-grid" data-catalogue-grid data-kind="piece" data-gender="men" data-department="Men,Unisex" data-sell-alone="true" data-empty-title="New pieces coming soon" data-empty-text="Men's pieces are on the way." aria-label="Individual pieces"></div>
+            <p class="filter-none" data-filter-none hidden>No pieces match these filters.</p>
+        </div>
+    </div>
 </section>
-
-<section class="items-grid piece-grid" data-catalogue-grid data-kind="piece" data-gender="men" data-sell-alone="true" data-empty-title="New pieces coming soon" data-empty-text="Men's pieces are on the way." aria-label="Individual pieces"></section>
 <noscript><p class="drops-note">Turn on JavaScript to see this collection.</p></noscript>
 
 <p class="drops-note">More men's categories are coming soon.</p>
@@ -122,6 +136,7 @@
 
 <script src="site-config.js"></script>
 <script src="catalogue-ui.js"></script>
+<script src="catalogue-filters.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

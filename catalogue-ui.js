@@ -205,15 +205,22 @@
             let html = '';
             if (kind === 'piece') {
                 const brand = grid.dataset.brand || '';
+                const departments = (grid.dataset.department || '').split(',').map(function(value) {
+                    return value.trim();
+                }).filter(Boolean);
                 const pieces = products.filter(function(product) {
                     if (product.sellAlone === false) return false;
                     if (product.price == null) return false;
                     if (brand) {
                         if (product.brand !== brand) return false;
-                    } else if (product.placement === 'brand') {
+                    } else if (!departments.length && product.placement === 'brand') {
                         return false;
                     }
-                    if (gender && product.category !== gender) return false;
+                    if (departments.length) {
+                        if (departments.indexOf(product.department) === -1) return false;
+                    } else if (gender && product.category !== gender) {
+                        return false;
+                    }
                     if (style && product.style !== style) return false;
                     return true;
                 });

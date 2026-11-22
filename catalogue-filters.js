@@ -58,16 +58,20 @@
         var raw = (root.dataset.filterSections || '').split(',');
         var wanted = raw.map(function(item) { return item.trim(); }).filter(Boolean);
         if (!wanted.length) {
-            wanted = ['department', 'category', 'subcategory', 'size', 'colour', 'price'];
+            return ['department', 'category', 'subcategory', 'size', 'colour', 'price'];
         }
-        return SECTION_ORDER.filter(function(key) { return wanted.indexOf(key) !== -1; });
+        return wanted.filter(function(key) { return SECTION_ORDER.indexOf(key) !== -1; });
     }
 
     function productsFor(root, catalogue) {
         var brand = root.dataset.filterBrand || '';
+        var departments = (root.dataset.filterDepartments || '').split(',').map(function(value) {
+            return value.trim();
+        }).filter(Boolean);
         return (catalogue.products || []).filter(function(product) {
             if (product.sellAlone === false || product.price == null) return false;
             if (brand && product.brand !== brand) return false;
+            if (departments.length && departments.indexOf(product.department) === -1) return false;
             return true;
         });
     }

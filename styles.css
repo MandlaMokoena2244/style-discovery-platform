@@ -2039,12 +2039,38 @@ h1, h2, h3, h4 {
     .submit-btn {
         letter-spacing: 1px;
     }
-    .items-grid {
-        grid-template-columns: 1fr;
+    .items-grid,
+    .trending-group.single .items-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
     }
     .item-card.piece-card .piece-frame,
     .item-card.outfit-card img {
-        height: 300px;
+        height: 200px;
+    }
+    .item-info {
+        padding: 0.65rem 0.4rem 0.75rem;
+    }
+    .item-info h3 {
+        font-size: 0.8rem;
+        line-height: 1.3;
+        min-height: 2.6em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .item-info p {
+        font-size: 0.65rem;
+        letter-spacing: 0.04em;
+    }
+    .item-brand {
+        font-size: 0.62rem !important;
+        letter-spacing: 0.08em !important;
+    }
+    .item-price {
+        font-size: 0.72rem !important;
+        letter-spacing: 0.02em !important;
     }
 }
 

@@ -2,162 +2,97 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://fashforge.co.za/</loc>
-    <lastmod>2026-10-12</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/men.html</loc>
-    <lastmod>2026-09-29</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/men-full-outfits.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/men-individual-pieces.html</loc>
-    <lastmod>2026-09-29</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/men-streetwear.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-streetwear-set.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-boxy-top.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-graphic-jogger.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-skater-sneaker.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/women.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <!-- Outfit pages stay out of the sitemap while FASHFORGE.showOutfits is false.
+  <url>
+    <loc>https://fashforge.co.za/men-full-outfits.html</loc>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <url>
+    <loc>https://fashforge.co.za/men-streetwear.html</loc>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/women-full-outfits.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/women-streetwear.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/women-smart-casual.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/women-formal.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/women-evening.html</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
-  <url>
-    <loc>https://fashforge.co.za/product-total-diva-stone-set.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-diva-denim-sneaker-set.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-orange-linen-coord.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-chocolate-knit-coord.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-taupe-waistcoat-set.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-corset-wide-leg-night-set.html</loc>
-    <lastmod>2026-10-04</lastmod>
-  </url>
+  -->
   <url>
     <loc>https://fashforge.co.za/women-individual-pieces.html</loc>
-    <lastmod>2026-10-19</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-total-diva-tee.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-barbi-pant-tan.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-barbi-pant-stone.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-firebird-denim.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-tinley-sneakers.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-orange-culotte.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-aloisa-cardigan.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-aloisa-pants.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-noella-sneakers.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-i-need-you-corset.html</loc>
-    <lastmod>2026-10-12</lastmod>
-  </url>
-  <url>
-    <loc>https://fashforge.co.za/product-sadie-jeans.html</loc>
-    <lastmod>2026-10-12</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/kids.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/brands.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-11-21</lastmod>
+  </url>
+  <url>
+    <loc>https://fashforge.co.za/brand-indie-nation.html</loc>
+    <lastmod>2026-11-21</lastmod>
+  </url>
+  <url>
+    <loc>https://fashforge.co.za/brand-lilyco.html</loc>
+    <lastmod>2026-11-21</lastmod>
+  </url>
+  <url>
+    <loc>https://fashforge.co.za/brand-de-tiamo.html</loc>
+    <lastmod>2026-11-21</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/about.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/contact.html</loc>
-    <lastmod>2026-09-29</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/terms-and-conditions.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/refunds-and-cancellations.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-11-18</lastmod>
   </url>
   <url>
     <loc>https://fashforge.co.za/delivery-policy.html</loc>
-    <lastmod>2026-10-09</lastmod>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <url>
+    <loc>https://fashforge.co.za/privacy.html</loc>
+    <lastmod>2026-11-18</lastmod>
   </url>
 </urlset>
+

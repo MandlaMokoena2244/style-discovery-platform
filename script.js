@@ -2,7 +2,128 @@
 // FashForge - Main JavaScript
 // ============================================
 
+function applySiteDetails() {
+    const site = window.FASHFORGE;
+    if (!site) return;
+    document.querySelectorAll('[data-site-email]').forEach(function(el) {
+        el.textContent = site.email;
+        if (el.tagName === 'A') el.setAttribute('href', 'mailto:' + site.email);
+    });
+    document.querySelectorAll('[data-site-legal]').forEach(function(el) {
+        el.textContent = site.legalName;
+    });
+    document.querySelectorAll('[data-site-reg]').forEach(function(el) {
+        el.textContent = site.registration;
+    });
+    document.querySelectorAll('[data-site-address]').forEach(function(el) {
+        el.textContent = site.addressLine;
+    });
+    if (!site.delivery || typeof site.formatZar !== 'function') return;
+    document.querySelectorAll('[data-site-free-from]').forEach(function(el) {
+        el.textContent = site.formatZar(site.delivery.freeFrom);
+    });
+    document.querySelectorAll('[data-site-door-fee]').forEach(function(el) {
+        el.textContent = site.formatZar(site.delivery.doorToDoor);
+    });
+    document.querySelectorAll('[data-site-locker-fee]').forEach(function(el) {
+        el.textContent = site.formatZar(site.delivery.locker);
+    });
+    document.querySelectorAll('[data-site-locker-hours]').forEach(function(el) {
+        el.textContent = String(site.delivery.lockerHours);
+    });
+    document.querySelectorAll('[data-site-locker-provider]').forEach(function(el) {
+        el.textContent = site.delivery.lockerProvider;
+    });
+    if (typeof site.deliveryWindowLine === 'function') {
+        document.querySelectorAll('[data-site-delivery-window]').forEach(function(el) {
+            el.textContent = site.deliveryWindowLine();
+        });
+    }
+    if (typeof site.dayRange === 'function') {
+        document.querySelectorAll('[data-site-pack-days]').forEach(function(el) {
+            el.textContent = site.dayRange(site.delivery.packDays);
+        });
+        document.querySelectorAll('[data-site-courier-days]').forEach(function(el) {
+            el.textContent = site.dayRange(site.delivery.courierDays);
+        });
+    }
+}
+
+function deliveryChoiceLabel(value) {
+    const delivery = window.FASHFORGE && window.FASHFORGE.delivery;
+    if (value === 'locker') {
+        const provider = delivery && delivery.lockerProvider ? delivery.lockerProvider : 'Courier Guy';
+        return provider + ' locker';
+    }
+    return 'door-to-door';
+}
+
+function insertDeliveryChoice(button) {
+    if (!button || document.getElementById('delivery-choice') || !window.FASHFORGE || !window.FASHFORGE.delivery) return;
+    const delivery = window.FASHFORGE.delivery;
+    const zar = window.FASHFORGE.formatZar;
+    const field = document.createElement('fieldset');
+    field.className = 'delivery-choice';
+    field.id = 'delivery-choice';
+    field.innerHTML =
+        '<legend>Delivery</legend>' +
+        '<label><input type="radio" name="delivery-method" value="door"> Door-to-door, ' + zar(delivery.doorToDoor) + '</label>' +
+        '<label><input type="radio" name="delivery-method" value="locker"> ' + delivery.lockerProvider + ' locker, ' + zar(delivery.locker) + '. Collect with a PIN within ' + delivery.lockerHours + ' hours.</label>' +
+        '<p>' + window.FASHFORGE.freeDeliveryLine() + ' ' + window.FASHFORGE.deliveryWindowLine() + '</p>';
+    button.insertAdjacentElement('beforebegin', field);
+}
+
+function ensureSiteNav() {
+    var navbar = document.querySelector('.navbar');
+    if (!navbar) return;
+    var links = navbar.querySelector('.nav-links');
+    if (!links) {
+        links = document.createElement('ul');
+        links.className = 'nav-links';
+        var cart = navbar.querySelector('.cart-btn');
+        if (cart) navbar.insertBefore(links, cart);
+        else navbar.appendChild(links);
+    }
+    links.innerHTML =
+        '<li><a href="index.html">Home</a></li>' +
+        '<li><a href="men.html">Men</a></li>' +
+        '<li><a href="women.html">Women</a></li>' +
+        '<li><a href="kids.html">Kids</a></li>' +
+        '<li><a href="brands.html">Brands</a></li>';
+    if (!navbar.querySelector('.cart-btn')) {
+        var button = document.createElement('button');
+        button.className = 'cart-btn';
+        button.id = 'cart-btn';
+        button.setAttribute('aria-label', 'Open cart');
+        button.innerHTML = '<span class="cart-count" id="cart-count">0</span>';
+        navbar.appendChild(button);
+    }
+    if (!navbar.querySelector('.hamburger')) {
+        var burger = document.createElement('div');
+        burger.className = 'hamburger';
+        burger.innerHTML = '<span></span><span></span><span></span>';
+        navbar.appendChild(burger);
+    }
+    var file = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    var active = '';
+    if (!file || file === 'index.html') active = 'index.html';
+    else if (file.indexOf('men') === 0) active = 'men.html';
+    else if (file.indexOf('women') === 0) active = 'women.html';
+    else if (file.indexOf('kids') === 0) active = 'kids.html';
+    else if (file.indexOf('brand') === 0) active = 'brands.html';
+    links.querySelectorAll('a').forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (href === active) {
+            link.setAttribute('aria-current', 'page');
+        } else {
+            link.removeAttribute('aria-current');
+        }
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    applySiteDetails();
+    ensureSiteNav();
 
     // Navbar scroll effect
     const navbar = document.querySelector('.navbar');
@@ -48,34 +169,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Contact form posts to Netlify Forms. WhatsApp on the contact page is only for queries.
+    // Contact form posts to Web3Forms. WhatsApp on the contact page is only for queries.
     const contactForm = document.querySelector('.contact-form form');
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;
             const button = form.querySelector('[type="submit"]');
-            const error = form.querySelector('.form-error');
-            if (error) error.remove();
+            const error = document.getElementById('contact-error');
+            const thanks = document.getElementById('contact-thanks');
+            if (error) {
+                error.hidden = true;
+                error.textContent = '';
+            }
             if (button) button.disabled = true;
-            const body = new URLSearchParams(new FormData(form)).toString();
-            fetch('/', {
+            const payload = Object.fromEntries(new FormData(form).entries());
+            fetch('https://api.web3forms.com/submit', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: body
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
             }).then(function(response) {
-                const local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                if (!response.ok && !local) throw new Error('send failed');
+                return response.json();
+            }).then(function(data) {
+                if (!data || data.success !== true) throw new Error('send failed');
                 form.hidden = true;
-                const thanks = document.getElementById('contact-thanks');
                 if (thanks) thanks.hidden = false;
             }).catch(function() {
                 if (button) button.disabled = false;
-                const note = document.createElement('p');
-                note.className = 'form-error';
-                note.setAttribute('role', 'alert');
-                note.textContent = 'We could not send your message just now. Please try again, or WhatsApp us on +27 67 256 5980.';
-                form.appendChild(note);
+                if (error) {
+                    error.hidden = false;
+                    error.textContent = 'We could not send your message just now. Please try again, or WhatsApp us on +27 67 256 5980.';
+                }
             });
         });
     }
@@ -94,11 +221,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // 'whatsapp' keeps Order on WhatsApp.
 // 'payfast' replaces that button with the card checkout form.
 // There is no WhatsApp order button while this is 'payfast' or 'disabled'.
-// The contact form is a Netlify Form and does not follow this switch.
+// The contact form posts to Web3Forms and does not follow this switch.
 // WhatsApp on the contact page is for queries only.
 // ============================================
 const PAYMENT_PROVIDER = 'disabled';
-const ORDERS_PAUSED_NOTICE = 'Online payments are not available yet. Our store is not taking orders for now, please check back soon.';
+const ORDERS_PAUSED_NOTICE = "We're not taking payments yet. Online checkout is coming soon — you can save items in your cart and check back shortly.";
 
 function activePaymentProvider() {
     if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
@@ -109,60 +236,16 @@ function activePaymentProvider() {
     return 'whatsapp';
 }
 
-// In-stock sizes only, keyed by piece id. Edit this list and the matching
-// STOCK entry in netlify/lib/catalogue.js together. sizes: [] means sold out.
-// Restock by putting sizes back. There is no separate sold-out flag.
-// Do not add brand prices here.
+// In-stock sizes only, keyed by piece id. Keep this in step with products.json.
+// The public catalogue is empty until outfits are added there.
+// sizes: [] means sold out. There is no separate sold-out flag.
 const PIECE_STOCK = {
-    pieces: {
-        1: { name: 'Boxy top', sizes: ['XXS', 'XS', 'S', 'M', 'L'] },
-        2: { name: 'Wide leg graphic jogger', sizes: ['XXS', 'XS', 'S', 'M', 'L', 'XL'] },
-        3: { name: 'Chunky skater sneaker', sizes: ['7', '8', '9'] },
-        4: { name: 'Total Diva Regular T-Shirt', sizes: ['XS', 'S', 'M', 'L', 'XL'] },
-        5: { name: 'Slim Leg Turn Up Barbi Pant in Stone', sizes: ['XS'] },
-        6: { name: 'adidas Originals Firebird denim pants', sizes: ['XS', 'S'] },
-        7: { name: 'Tinley Sneakers', sizes: ['3', '5', '6', '7', '8'] },
-        8: { name: 'Fancy Button Linen Look Wrap Top', sizes: ['XXS'] },
-        9: { name: 'Culotte Linen Look Pant', sizes: ['XS', 'S'] },
-        10: { name: 'Aloisa Knit Cardigan', sizes: ['One size fits most'] },
-        11: { name: 'Aloisa Knit Pants', sizes: ['One size fits most'] },
-        12: { name: 'Noella Sneakers', sizes: ['6', '7', '8'] },
-        13: { name: 'Sleeveless Double Breasted Knit Top', sizes: ['XXS'] },
-        14: { name: 'I Need You Corset', sizes: [] },
-        15: { name: 'Sadie Wide Leg Jeans', sizes: [] },
-        16: { name: 'Clause Boots', sizes: ['5'] }
-    }
+    pieces: {}
 };
 
-// Piece ids for each outfit, and for pieces sold on their own.
-// Outfit cards use data-outfit-id. Piece cards use data-piece-id.
-// Sold out when any of those pieces has sizes: [].
-const OUTFIT_PIECE_IDS = {
-    'FF-M-001': [1, 2, 3],
-    'FF-W-001': [4, 5],
-    'FF-W-002': [4, 6, 7],
-    'FF-W-003': [8, 9],
-    'FF-W-004': [10, 11, 12],
-    'FF-W-005': [13, 5],
-    'FF-W-006': [14, 15, 16]
-};
+const OUTFIT_PIECE_IDS = {};
 
-const SINGLE_PIECE_IDS = {
-    'Boxy Top': 1,
-    'Black Wide Leg Graphic Jogger': 2,
-    'Chunky Lace Up Skater Sneaker': 3,
-    'Total Diva Regular T-Shirt': 4,
-    'Barbi Pant, tan colour': 5,
-    'Barbi Pant, stone colour': 5,
-    'adidas Originals Firebird Denim Pants': 6,
-    'Tinley Sneakers': 7,
-    'Culotte Linen Look Pant, orange': 9,
-    'Aloisa Knit Cardigan': 10,
-    'Aloisa Knit Pants': 11,
-    'Noella Sneakers': 12,
-    'I Need You Corset': 14,
-    'Sadie Wide Leg Jeans': 15
-};
+const SINGLE_PIECE_IDS = {};
 
 function pieceSizes(pieceId) {
     const entry = PIECE_STOCK.pieces[pieceId];
@@ -203,7 +286,26 @@ function soldOutCartMessage(items) {
     return 'Some items are sold out. Remove them from your cart.';
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+
+    let catalogue = null;
+    try {
+        const response = await fetch('products.json');
+        if (response.ok) catalogue = await response.json();
+    } catch (err) {
+        catalogue = null;
+    }
+    if (catalogue && window.renderFashforgeCatalogue) {
+        (catalogue.products || []).forEach(function(product) {
+            if (product.stockId == null) return;
+            PIECE_STOCK.pieces[product.stockId] = { sizes: Array.isArray(product.sizes) ? product.sizes.slice() : [] };
+            if (product.name) SINGLE_PIECE_IDS[product.name] = product.stockId;
+        });
+        (catalogue.outfits || []).forEach(function(outfit) {
+            OUTFIT_PIECE_IDS[outfit.id] = (outfit.pieces || []).map(function(piece) { return piece.stockId; });
+        });
+        window.renderFashforgeCatalogue(catalogue);
+    }
 
     function formatRand(amount) {
         return 'R' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -244,6 +346,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    const buyButton = document.getElementById('add-to-cart');
+    if (buyButton && !buyButton.disabled) {
+        if (activePaymentProvider() === 'disabled') {
+            buyButton.textContent = 'Add to cart';
+        } else {
+            const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, buyButton) : null;
+            const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
+            buyButton.textContent = paymentLink ? 'Buy' : 'Order on WhatsApp';
+        }
+    }
+
     function placeSoldOutBadge(card) {
         if (card.querySelector(':scope > .sold-out-badge')) return;
         card.insertAdjacentHTML('afterbegin', '<span class="sold-out-badge">Sold out</span>');
@@ -264,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Outfit ID format: FF-<M|W|K>-<NNN> (M men, W women, K kids), e.g. FF-M-001.
     // Set data-outfit-id on the product's Add to Cart button. The next free number
-    // in that department is the next ID (FF-M-002, FF-W-007, FF-K-001, ...).
+    // in that department is the next ID. The catalogue is empty, so FF-M-001 is free.
     // Brand product URLs and supplier details stay in a private Google Sheet keyed
     // by this ID — do not put them in the site. Cart lines with no outfit id
     // (or an older non-FF id) still check out; the id is left off that line.
@@ -358,14 +471,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${payfastOn ? checkoutFormHtml() : ''}
             </div>
             <div class="cart-drawer-footer">
-                ${payfastOn ? '<p class="cart-delivery-note">Free delivery on orders over R4,000.</p>' : ''}
+                ${payfastOn ? '<p class="cart-delivery-note">' + (window.FASHFORGE && window.FASHFORGE.freeDeliveryLine ? window.FASHFORGE.freeDeliveryLine() : 'Free delivery on orders of R2,000 or more.') + '</p>' : ''}
                 <div class="cart-total-row">
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
                 </div>
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 ${ordersDisabled
-                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p>'
+                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout coming soon</button>'
                     : '<button class="btn-checkout" id="checkout-btn" type="' + (payfastOn ? 'submit' : 'button') + '"' + (payfastOn ? ' form="checkout-form"' : '') + '>' + (payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
@@ -703,12 +816,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
-        const defaultLabel = addBtn.innerHTML;
-        const pieceLabels = {
-            top: 'Boxy top',
-            jogger: 'Black wide leg graphic jogger',
-            shoe: 'Chunky lace up skater sneaker'
-        };
+        if (activePaymentProvider() !== 'disabled') insertDeliveryChoice(addBtn);
+        const pieceLabels = {};
         addBtn.addEventListener('click', () => {
             if (addBtn.disabled || productSoldOut) return;
             // Collect the chosen size from EACH piece group
@@ -728,30 +837,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const outfitId = (addBtn.getAttribute('data-outfit-id') || '').trim();
-            const price = Number(addBtn.dataset.price || 1050);
-            const product = {
-                name: addBtn.dataset.name || 'Boxy Top Streetwear Set',
-                brand: addBtn.dataset.brand || 'THE FIX',
-                price: price,
-                qty: parseInt(qtyInput.value, 10)
-            };
-            // A single piece stores one size. The full set stores a size per piece.
-            if (addBtn.dataset.singleSize === 'true') {
-                product.size = Object.values(sizes)[0] || '';
-            } else {
-                product.sizes = sizes; // e.g. { top: 'M', jogger: 'L', shoe: '9' }
+            if (activePaymentProvider() === 'disabled') {
+                const qtyField = document.getElementById('qty');
+                const qty = qtyField ? Math.max(1, parseInt(qtyField.value, 10) || 1) : 1;
+                const sizeValues = Object.keys(sizes).map(function(key) { return sizes[key]; });
+                window.addToCart({
+                    id: addBtn.dataset.outfitId || addBtn.dataset.id || '',
+                    name: addBtn.dataset.name || 'this piece',
+                    brand: addBtn.dataset.brand || '',
+                    price: Number(addBtn.dataset.price) || 0,
+                    qty: qty,
+                    sizes: sizes,
+                    size: sizeValues.join(', ')
+                });
+                return;
             }
-            // Only store a real outfit ID. Missing or legacy ids must not block checkout.
-            if (OUTFIT_ID_RE.test(outfitId)) product.id = outfitId;
-            addToCart(product);
 
-            addBtn.textContent = 'Added to Cart \u2713';
-            addBtn.classList.add('added');
-            setTimeout(() => {
-                addBtn.innerHTML = defaultLabel;
-                addBtn.classList.remove('added');
-            }, 2000);
+            const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, addBtn) : null;
+            const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
+            // TODO(Mandla): a Stitch Express paymentLink does not receive the chosen size yet.
+            if (paymentLink) {
+                window.location.assign(paymentLink);
+                return;
+            }
+
+            const deliveryChoice = document.querySelector('input[name="delivery-method"]:checked');
+            if (!deliveryChoice) {
+                alert('Please choose door-to-door delivery or a Courier Guy locker.');
+                return;
+            }
+
+            const parts = [];
+            document.querySelectorAll('.size-group').forEach(group => {
+                const selected = group.querySelector('.size-btn.selected');
+                if (!selected) return;
+                const label = PIECE_LABELS[group.dataset.piece] || group.dataset.label || 'Size';
+                parts.push(label + ' ' + selected.dataset.size);
+            });
+            const name = addBtn.dataset.name || 'this piece';
+            const sizeText = parts.join(', ');
+            const message = "Hi FashForge, I'd like to order " + name + (sizeText ? ' (' + sizeText + ')' : '') + '. Delivery: ' + deliveryChoiceLabel(deliveryChoice.value) + '.';
+            const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
+            const opened = window.open(url, '_blank', 'noopener');
+            if (!opened) {
+                alert('Allow pop-ups to open WhatsApp, or message us on +27 67 256 5980.');
+            }
         });
     }
 

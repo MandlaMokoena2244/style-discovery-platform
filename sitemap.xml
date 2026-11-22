@@ -9,19 +9,20 @@
     <lastmod>2026-11-18</lastmod>
   </url>
   <url>
-    <loc>https://fashforge.co.za/men-full-outfits.html</loc>
-    <lastmod>2026-11-18</lastmod>
-  </url>
-  <url>
     <loc>https://fashforge.co.za/men-individual-pieces.html</loc>
     <lastmod>2026-11-18</lastmod>
   </url>
   <url>
-    <loc>https://fashforge.co.za/men-streetwear.html</loc>
+    <loc>https://fashforge.co.za/women.html</loc>
+    <lastmod>2026-11-18</lastmod>
+  </url>
+  <!-- Outfit pages stay out of the sitemap while FASHFORGE.showOutfits is false.
+  <url>
+    <loc>https://fashforge.co.za/men-full-outfits.html</loc>
     <lastmod>2026-11-18</lastmod>
   </url>
   <url>
-    <loc>https://fashforge.co.za/women.html</loc>
+    <loc>https://fashforge.co.za/men-streetwear.html</loc>
     <lastmod>2026-11-18</lastmod>
   </url>
   <url>
@@ -44,6 +45,7 @@
     <loc>https://fashforge.co.za/women-evening.html</loc>
     <lastmod>2026-11-18</lastmod>
   </url>
+  -->
   <url>
     <loc>https://fashforge.co.za/women-individual-pieces.html</loc>
     <lastmod>2026-11-18</lastmod>

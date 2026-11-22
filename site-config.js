@@ -7,6 +7,8 @@ function formatZar(amount) {
 }
 
 window.FASHFORGE = {
+    // Set true to show full-outfit sections, style pages, and the homepage outfits block again.
+    showOutfits: false,
     legalName: 'FashForge (Pty) Ltd',
     registration: '2026/919971/07',
     email: 'hello@fashforge.co.za',
@@ -37,3 +39,25 @@ window.FASHFORGE = {
         return 'Delivery usually takes ' + window.FASHFORGE.dayRange(days) + ' business days.';
     }
 };
+
+// Full outfits are paused. The pages and markup stay; this only hides them.
+(function () {
+    if (!window.FASHFORGE || window.FASHFORGE.showOutfits !== false) return;
+    document.documentElement.classList.add('outfits-hidden');
+    var file = (location.pathname.split('/').pop() || '').toLowerCase();
+    var back = {
+        'men-full-outfits.html': 'men.html',
+        'men-streetwear.html': 'men.html',
+        'women-full-outfits.html': 'women.html',
+        'women-streetwear.html': 'women.html',
+        'women-smart-casual.html': 'women.html',
+        'women-formal.html': 'women.html',
+        'women-evening.html': 'women.html'
+    };
+    if (!back[file]) return;
+    var robots = document.createElement('meta');
+    robots.name = 'robots';
+    robots.content = 'noindex';
+    document.head.appendChild(robots);
+    location.replace(back[file]);
+})();

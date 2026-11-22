@@ -20,6 +20,28 @@
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+html.outfits-hidden [data-outfit-block] { display: none !important; }
+html:not(.outfits-hidden) [data-show-when-outfits-hidden] { display: none !important; }
+html.outfits-hidden .shop-choice-grid {
+    grid-template-columns: minmax(0, 36rem);
+    justify-content: center;
+}
+.kids-coming {
+    min-height: calc(100vh - var(--nav-height) - 16rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1.5rem 5rem;
+}
+.kids-coming h2 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    margin-bottom: 0.75rem;
+}
+.kids-coming p {
+    color: var(--text-light);
+    max-width: 28rem;
+}
 body {
     font-family: var(--font-body);
     color: var(--text-dark);

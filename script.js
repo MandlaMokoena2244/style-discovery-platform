@@ -228,6 +228,7 @@ const PAYMENT_PROVIDER = 'disabled';
 const ORDERS_PAUSED_NOTICE = "We're not taking payments yet. Online checkout is coming soon — you can save items in your cart and check back shortly.";
 
 function activePaymentProvider() {
+    if (typeof window !== 'undefined' && window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true) return 'stitch';
     if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
     if (PAYMENT_PROVIDER === 'disabled') return 'disabled';
     if (PAYMENT_PROVIDER !== 'whatsapp') {
@@ -398,6 +399,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const paymentProvider = activePaymentProvider();
     const payfastOn = paymentProvider === 'payfast';
+    const stitchOn = paymentProvider === 'stitch';
+    const checkoutOn = payfastOn || stitchOn;
+    let stitchSubmitting = false;
     const ordersDisabled = paymentProvider === 'disabled';
 
     function checkoutFormHtml() {
@@ -418,6 +422,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `
             <form id="checkout-form" class="checkout-form" novalidate>
                 <h4>Delivery details</h4>
+                ${stitchOn ? '<p>Test checkout only. No orders will be fulfilled. Use test details.</p><div class="form-group"><label for="checkout-delivery">Delivery in South Africa</label><select id="checkout-delivery"><option value="door">Door-to-door</option><option value="locker">Courier Guy locker</option></select></div><p>For locker delivery, enter the locker address below.</p>' : ''}
                 <div class="form-group">
                     <label for="checkout-name">Full name</label>
                     <input id="checkout-name" name="name" type="text" autocomplete="name" maxlength="100" required>
@@ -461,17 +466,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // ---- Inject cart drawer + overlay into the page ----
     document.body.insertAdjacentHTML('beforeend', `
         <div class="cart-overlay" id="cart-overlay"></div>
-        <aside class="cart-drawer${payfastOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${paymentProvider}">
+        <aside class="cart-drawer${checkoutOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${paymentProvider}">
             <div class="cart-drawer-header">
                 <h3>Your Cart</h3>
                 <button class="cart-close" id="cart-close" aria-label="Close cart">&times;</button>
             </div>
             <div class="cart-drawer-body">
                 <div class="cart-items" id="cart-items"></div>
-                ${payfastOn ? checkoutFormHtml() : ''}
+                ${checkoutOn ? checkoutFormHtml() : ''}
             </div>
             <div class="cart-drawer-footer">
-                ${payfastOn ? '<p class="cart-delivery-note">' + (window.FASHFORGE && window.FASHFORGE.freeDeliveryLine ? window.FASHFORGE.freeDeliveryLine() : 'Free delivery on orders of R2,000 or more.') + '</p>' : ''}
+                ${checkoutOn ? '<p class="cart-delivery-note">' + (window.FASHFORGE && window.FASHFORGE.freeDeliveryLine ? window.FASHFORGE.freeDeliveryLine() : 'Free delivery on orders of R2,000 or more.') + '</p>' : ''}
                 <div class="cart-total-row">
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
@@ -479,7 +484,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 ${ordersDisabled
                     ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout coming soon</button>'
-                    : '<button class="btn-checkout" id="checkout-btn" type="' + (payfastOn ? 'submit' : 'button') + '"' + (payfastOn ? ' form="checkout-form"' : '') + '>' + (payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
+                    : '<button class="btn-checkout" id="checkout-btn" type="' + (checkoutOn ? 'submit' : 'button') + '"' + (checkoutOn ? ' form="checkout-form"' : '') + '>' + (stitchOn ? 'Checkout (test)' : payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
         </aside>
@@ -573,9 +578,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Total
         const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-        totalEl.textContent = formatRand(total);
+        const fee = stitchOn && cart.length ? stitchDeliveryFee(total) : 0;
+        totalEl.textContent = formatRand(total + fee);
+        if (stitchOn) {
+            checkoutBtn.disabled = stitchSubmitting || !cart.length || !!stitchCartProblem();
+            const note = drawer.querySelector('.cart-delivery-note');
+            if (note) note.textContent = 'Delivery: ' + formatRand(fee) + '. ' + window.FASHFORGE.freeDeliveryLine();
+        }
 
-        const blocked = soldOutCartMessage(cart);
+        const blocked = stitchOn ? stitchCartProblem() : soldOutCartMessage(cart);
         if (blocked) showCheckoutError(blocked, 'sold-out');
         else if (checkoutError && checkoutError.dataset.reason === 'sold-out') showCheckoutError('');
     }
@@ -780,6 +791,70 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    function stitchDeliveryFee(subtotal) {
+        const rules = window.FASHFORGE.delivery;
+        if (subtotal >= rules.freeFrom) return 0;
+        return fieldValue('checkout-delivery') === 'locker' ? rules.locker : rules.doorToDoor;
+    }
+
+    function stitchCartProblem() {
+        if (!catalogue || !Array.isArray(catalogue.products)) return 'The catalogue could not load. Refresh before checking out.';
+        for (const item of cart) {
+            const product = catalogue.products.find(p => p.id === item.id && p.sellAlone);
+            if (!product || product.inStock === false || (Array.isArray(product.sizes) && !product.sizes.length)) return 'An item is unavailable. Remove it from your cart.';
+            if (Array.isArray(product.sizes) && !product.sizes.includes(item.size)) return 'Choose an available size for ' + product.name + '. Remove it and add it again with a size.';
+            if (!Number.isInteger(item.qty) || item.qty < 1 || item.qty > 20) return 'Quantity must be between 1 and 20.';
+        }
+        return '';
+    }
+
+    async function submitStitchCheckout() {
+        if (stitchSubmitting || activePaymentProvider() !== 'stitch') return;
+        const problem = !cart.length ? 'Your cart is empty.' : stitchCartProblem();
+        if (problem) { showCheckoutError(problem); return; }
+        const form = document.getElementById('checkout-form');
+        if (!form.reportValidity()) return;
+        const customer = readCheckoutCustomer();
+        if (customer.name.length < 3 || customer.name.length > 40) {
+            showCheckoutError('Enter your full name (3–40 characters).'); return;
+        }
+        const invalid = validateCheckoutCustomer(customer);
+        if (invalid) { showCheckoutError(invalid); return; }
+        customer.country = 'ZA';
+        stitchSubmitting = true;
+        checkoutBtn.disabled = true;
+        checkoutBtn.textContent = 'Opening Stitch test checkout…';
+        showCheckoutError('');
+        try {
+            const response = await fetch('/api/checkout', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer: customer, deliveryMethod: fieldValue('checkout-delivery'),
+                    items: cart.map(item => ({ id: item.id, size: item.size || '', qty: item.qty }))
+                })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || 'Test checkout could not be started.');
+            const target = new URL(data.redirectUrl);
+            if (target.origin !== 'https://express.stitch.money' || target.username || target.password) throw new Error('Invalid checkout link.');
+            const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * item.qty, 0);
+            if (data.amount !== Math.round((subtotal + stitchDeliveryFee(subtotal)) * 100)) throw new Error('Prices have changed. Refresh and add your items again before checking out.');
+            window.location.assign(target.href);
+        } catch (error) {
+            showCheckoutError(error.message || 'Test checkout could not be started.');
+            stitchSubmitting = false;
+            checkoutBtn.disabled = false;
+            checkoutBtn.textContent = 'Checkout (test)';
+        }
+    }
+
+    if (stitchOn) {
+        document.getElementById('checkout-delivery').addEventListener('change', renderCart);
+        document.getElementById('checkout-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitStitchCheckout();
+        });
+    }
     if (payfastOn) {
         document.getElementById('checkout-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -816,7 +891,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const addBtn = document.getElementById('add-to-cart');
     if (addBtn) {
-        if (activePaymentProvider() !== 'disabled') insertDeliveryChoice(addBtn);
+        if (!['disabled', 'stitch'].includes(activePaymentProvider())) insertDeliveryChoice(addBtn);
         const pieceLabels = {};
         addBtn.addEventListener('click', () => {
             if (addBtn.disabled || productSoldOut) return;
@@ -837,7 +912,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return;
             }
 
-            if (activePaymentProvider() === 'disabled') {
+            if (['disabled', 'stitch'].includes(activePaymentProvider())) {
                 const qtyField = document.getElementById('qty');
                 const qty = qtyField ? Math.max(1, parseInt(qtyField.value, 10) || 1) : 1;
                 const sizeValues = Object.keys(sizes).map(function(key) { return sizes[key]; });

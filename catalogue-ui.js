@@ -415,8 +415,9 @@
             '<input type="text" id="qty" value="1" readonly>' +
             '<button class="qty-btn" id="qty-plus" type="button">+</button>' +
             '</div>' +
-            '<button class="btn-add-cart" id="add-to-cart"' + dataOutfit + dataSingle +
-            ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">Add to cart</button>' +
+            '<button class="btn-add-cart" id="add-to-cart" type="button"' + dataOutfit + dataSingle +
+            ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">' +
+            (window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true ? 'Add to cart' : 'Order on WhatsApp') + '</button>' +
             '<p class="product-note"><a href="' + escapeHtml(back) + '">Back to ' + escapeHtml(brand || 'the collection') + '</a></p>' +
             '</div></div>';
         bindGallery(mount);

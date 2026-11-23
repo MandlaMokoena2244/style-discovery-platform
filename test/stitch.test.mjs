@@ -4,9 +4,117 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { createHmac, randomBytes } from 'node:crypto';
 import { registerHooks } from 'node:module';
+import { onRequest as siteConfig } from '../functions/api/site-config.js';
 
 const catalogueUrl = new URL('../products.json', import.meta.url);
 const catalogue = JSON.parse(readFileSync(catalogueUrl, 'utf8'));
+const purchaseScript = readFileSync(new URL('../script.js', import.meta.url), 'utf8');
+const purchaseHelpers = purchaseScript.slice(purchaseScript.indexOf('// Product purchase helpers.'), purchaseScript.indexOf('// End product purchase helpers.'));
+
+test('public checkout flag exposes only a boolean and keeps test guards', async () => {
+    const request = new Request('https://preview.example.com/api/site-config');
+    const config = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-fixture', STITCH_CLIENT_SECRET: 'opaque-fixture', RESEND_API_KEY: 'private-fixture' };
+    const response = siteConfig({ request, env: config });
+    assert.deepEqual(await response.json(), { checkoutEnabled: true });
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
+    for (const change of [{ CHECKOUT_ENABLED: 'false' }, { CHECKOUT_ENABLED: undefined }, { STITCH_MODE: 'live' }, { STITCH_CLIENT_ID: 'live-fixture' }, { STITCH_CLIENT_SECRET: '' }]) {
+        assert.deepEqual(await siteConfig({ request, env: { ...config, ...change } }).json(), { checkoutEnabled: false });
+    }
+    assert.equal(siteConfig({ request: new Request(request.url, { method: 'POST' }), env: config }).status, 405);
+});
+
+test('server flag enables a disabled local default, overrides stale true and fails safely', async () => {
+    for (const [local, remote, expected] of [[false, true, true], [true, false, false], [false, 'invalid', false]]) {
+        const context = { window: { FASHFORGE: { checkoutEnabled: local, showOutfits: false } }, AbortSignal, fetch: async () => Response.json({ checkoutEnabled: remote }) };
+        vm.runInNewContext(purchaseHelpers, context);
+        await context.loadCheckoutFlag();
+        assert.equal(context.window.FASHFORGE.checkoutEnabled, expected);
+        assert.equal(context.window.FASHFORGE.showOutfits, false);
+    }
+    const context = { window: { FASHFORGE: { checkoutEnabled: false } }, AbortSignal, fetch: async () => { throw new Error('offline'); } };
+    vm.runInNewContext(purchaseHelpers, context);
+    await context.loadCheckoutFlag();
+    assert.equal(context.window.FASHFORGE.checkoutEnabled, false);
+});
+
+function purchaseHarness(enabled) {
+    const product = catalogue.products.find(p => p.name === 'Death Before Decaf Black Unisex Tee') ||
+        catalogue.products.find(p => p.sellAlone && p.sizes?.length && p.inStock !== false);
+    const added = [], opened = [], inserted = [];
+    let selected = null;
+    const group = { dataset: { piece: 'size', label: product.name }, querySelector() { return selected; } };
+    const quantity = { value: '2' };
+    const button = {
+        dataset: { id: product.id, name: product.name }, disabled: false, events: {},
+        classList: { add(value) { button.addedClass = value; } },
+        insertAdjacentElement(position, element) { inserted.push(element); },
+        addEventListener(name, callback) { this.events[name] = callback; }
+    };
+    const context = {
+        window: { FASHFORGE: { phoneWa: '27672565980' }, addToCart(line) { added.push(line); }, open(...args) { opened.push(args); } },
+        document: {
+            createElement() { return { events: {}, setAttribute(key, value) { this[key] = value; }, addEventListener(name, callback) { this.events[name] = callback; } }; },
+            querySelectorAll() { return [group]; },
+            getElementById() { return quantity; },
+            querySelector() { return { value: 'door' }; }
+        },
+        insertDeliveryChoice() {},
+        deliveryChoiceLabel() { return 'door-to-door'; }
+    };
+    vm.runInNewContext(purchaseHelpers, context);
+    context.bindProductPurchase(button, catalogue, enabled);
+    return { context, product, button, quantity, added, opened, feedback: inserted[0], secondary: inserted[1], choose(size) { selected = { dataset: { size } }; } };
+}
+
+test('enabled product button requires size, adds canonical items/quantity and shows feedback plus secondary WhatsApp', () => {
+    const h = purchaseHarness(true);
+    assert.equal(h.button.textContent, 'Add to cart');
+    assert.equal(h.secondary.hidden, false);
+    h.button.events.click();
+    assert.equal(h.added.length, 0);
+    assert.match(h.feedback.textContent, /Please select a size/);
+    h.choose(h.product.sizes[0]);
+    h.button.events.click();
+    assert.equal(h.added.length, 1);
+    assert.equal(h.added[0].id, h.product.id);
+    assert.equal(h.added[0].size, h.product.sizes[0]);
+    assert.equal(h.added[0].qty, 2);
+    assert.match(h.feedback.textContent, /Added to cart/);
+    assert.equal(h.button.addedClass, 'added');
+    assert.equal(h.opened.length, 0);
+    h.secondary.events.click({ preventDefault() { assert.fail('Valid secondary link must navigate'); } });
+    assert.match(decodeURIComponent(h.secondary.href), /Quantity: 2/);
+    h.quantity.value = '0';
+    h.button.events.click();
+    assert.equal(h.added.length, 1);
+    assert.match(h.feedback.textContent, /quantity/);
+    // The existing checkout request mapper never sends the display price/name.
+    const mapper = purchaseScript.match(/items: cart\.map\(item => \(\{ id: item\.id, size: item\.size \|\| '', qty: item\.qty \}\)\)/);
+    assert.ok(mapper);
+});
+
+test('disabled product button keeps WhatsApp primary and never adds to cart', () => {
+    const h = purchaseHarness(false);
+    assert.equal(h.button.textContent, 'Order on WhatsApp');
+    assert.equal(h.secondary.hidden, true);
+    h.choose(h.product.sizes[0]);
+    h.button.events.click();
+    assert.equal(h.added.length, 0);
+    assert.equal(h.opened.length, 1);
+    assert.match(h.opened[0][0], /^https:\/\/wa\.me\//);
+    assert.match(decodeURIComponent(h.opened[0][0]), /Quantity: 2/);
+});
+
+test('shared outfit path uses server-accepted piece IDs and sizes, rejects unavailable pieces', () => {
+    const h = purchaseHarness(true);
+    const p = h.product;
+    const fixture = { products: [p], outfits: [{ id: 'outfit-fixture', pieces: [{ stockId: p.stockId, key: 'top' }] }] };
+    const lines = h.context.productCartItems(fixture, 'outfit-fixture', { top: p.sizes[0] }, 1);
+    assert.equal(lines[0].id, p.id);
+    assert.equal(lines[0].size, p.sizes[0]);
+    assert.throws(() => h.context.productCartItems(fixture, 'outfit-fixture', {}, 1), /size/);
+    assert.throws(() => h.context.productCartItems({ ...fixture, products: [{ ...p, sellAlone: false }] }, 'outfit-fixture', { top: p.sizes[0] }, 1), /unavailable/);
+});
 // Node-only loader: mimic Wrangler's native JSON bundling without adding
 // import attributes to production source. Scope the hook to this catalogue.
 const catalogueLoader = registerHooks({

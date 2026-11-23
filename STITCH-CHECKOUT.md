@@ -1,8 +1,8 @@
 # Stitch Express test checkout and orders
 
-This branch targets **dev**, never main. Checkout is temporarily enabled for
-preview testing. Revert commit 0d042943d52d0032bab3a08a8bf5eee1576c9457 before merging
-to restore checkoutEnabled:false and its test expectation. showOutfits stays false.
+This branch targets **dev**, never main. The temporary enable commit 0d04294 has
+been reverted: site-config.js defaults to checkoutEnabled:false. showOutfits stays
+false. Preview can enable checkout through the public server flag described below.
 All payment/order operations require STITCH_MODE=test and a test- client ID.
 No live payments or physical fulfilment are enabled. Confirmation emails are real
 emails labelled TEST; use addresses you control during preview testing.
@@ -35,6 +35,29 @@ Configure these variables in **Preview only**:
 
 Leave production unchanged. Secrets never appear in browser JS or responses.
 Local secrets belong in ignored .dev.vars; .dev.vars.example contains placeholders.
+
+## Product buttons and public checkout flag
+
+GET /api/site-config returns only {checkoutEnabled:boolean} with Cache-Control:no-store.
+It returns true only when CHECKOUT_ENABLED=true, STITCH_MODE=test, a test-prefixed
+client ID and a nonempty secret are configured. No keys or other environment values
+are returned. /api/checkout still independently enforces its server-side guards.
+
+The browser fetches this flag before rendering the catalogue and initializing the
+cart. A valid server boolean overrides site-config.js (including server false over
+a local true); missing/unreachable/invalid responses retain the local default false.
+This keeps Preview enabled after reverting the temporary flag without changing
+production. Set the variables in Preview only and redeploy after changes.
+
+All current product/outfit detail URLs use product.html and catalogue-ui.js; no
+standalone HTML product order button was found. When enabled, the primary button
+is Add to cart with selected size/quantity validation and visible added feedback.
+The existing cart count/drawer updates, and checkout posts only id/size/qty (not
+browser prices). Order on WhatsApp is a smaller secondary link. When disabled,
+WhatsApp is the main action, using the selected size/quantity and delivery choice.
+Outfits remain hidden; the shared outfit handler maps pieces to sellable catalogue
+product IDs instead of submitting unsupported outfit IDs. An unavailable/non-standalone
+piece blocks that outfit checkout with an explanation.
 
 ## Stitch registration
 
@@ -142,8 +165,9 @@ before broader use.
 
 ## Preview test checklist
 
-1. Add ORDERS and the email variables, then redeploy. The preview flag is already
-   true and showOutfits remains false.
+1. Add ORDERS and the email variables, set CHECKOUT_ENABLED=true and STITCH_MODE=test
+   with valid test credentials in Preview, then redeploy. Check /api/site-config
+   returns only {"checkoutEnabled":true}; showOutfits remains false.
 2. Add a sized product and use an email/address you control. Inspect the pending
    KV record before payment, including catalogue prices, sizes, address and notes.
 3. Complete an Express test payment. Check paid status, one owner email with all
@@ -155,7 +179,8 @@ before broader use.
 6. Test cancellation/expiry, invalid signatures and amount mismatch. PENDING card
    declines stay pending. Unknown references may return 404 during KV propagation.
 7. Check desktop/mobile, only status/total in JSON, and cart preservation until paid.
-8. Revert the temporary preview-enable commit before merging into dev.
+8. Verify the repo default stays false and production has no enabling server flag.
+   No additional preview-flag revert is needed.
 
 Local checks (Node 24 for the test-only JSON loader):
 

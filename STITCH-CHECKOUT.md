@@ -83,7 +83,8 @@ appends the documented redirect_url parameter to the returned payment link.
 7. Check both return pages at desktop/mobile widths. Both are noindex and retain
    the cart. With checkoutEnabled: false the original paused message returns.
 
-Local checks:
+Local checks (Node 24 for the test-only JSON loader; deployed Functions use
+Wrangler's native JSON bundling):
 
     node --test test/stitch.test.mjs test/payfast.test.js
     node --check script.js

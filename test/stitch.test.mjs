@@ -3,10 +3,28 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { createHmac, randomBytes } from 'node:crypto';
-import catalogue from '../products.json' with { type: 'json' };
-import { priceCart, validateCustomer, delivery, requireTestConfig } from '../lib/stitch-checkout.mjs';
-import { onRequest as checkout } from '../functions/api/checkout.js';
-import { onRequest as webhook, verifyWebhook } from '../functions/api/stitch-webhook.js';
+import { registerHooks } from 'node:module';
+
+const catalogueUrl = new URL('../products.json', import.meta.url);
+const catalogue = JSON.parse(readFileSync(catalogueUrl, 'utf8'));
+// Node-only loader: mimic Wrangler's native JSON bundling without adding
+// import attributes to production source. Scope the hook to this catalogue.
+const catalogueLoader = registerHooks({
+    load(url, context, nextLoad) {
+        if (url === catalogueUrl.href) {
+            return { format: 'module', source: 'export default ' + JSON.stringify(catalogue) + ';', shortCircuit: true };
+        }
+        return nextLoad(url, context);
+    }
+});
+let priceCart, validateCustomer, delivery, requireTestConfig, checkout, webhook, verifyWebhook;
+try {
+    ({ priceCart, validateCustomer, delivery, requireTestConfig } = await import('../lib/stitch-checkout.mjs'));
+    ({ onRequest: checkout } = await import('../functions/api/checkout.js'));
+    ({ onRequest: webhook, verifyWebhook } = await import('../functions/api/stitch-webhook.js'));
+} finally {
+    catalogueLoader.deregister();
+}
 
 const product = catalogue.products.find(p => p.sellAlone && p.sizes?.length && p.inStock !== false);
 const item = { id: product.id, size: product.sizes[0], qty: 1 };

@@ -304,8 +304,7 @@ test('catalogue prices override all browser prices; both delivery methods and fr
     const context = { window: {}, document: { documentElement: { classList: { add() {} } } }, location: { pathname: '/' } };
     vm.runInNewContext(readFileSync(new URL('../site-config.js', import.meta.url), 'utf8'), context);
     for (const key of Object.keys(delivery)) assert.equal(context.window.FASHFORGE.delivery[key], delivery[key]);
-    // Temporary preview flag; reverted together with site-config.js before merging.
-    assert.equal(context.window.FASHFORGE.checkoutEnabled, true);
+    assert.equal(context.window.FASHFORGE.checkoutEnabled, false);
     assert.equal(context.window.FASHFORGE.showOutfits, false);
 });
 test('empty, unknown, missing size, invalid quantity and duplicate quantity bypass are rejected', () => {

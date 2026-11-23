@@ -510,6 +510,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     function saveCart() {
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
     }
+    window.addEventListener('fashforge:order-paid', function() {
+        cart = [];
+        renderCart();
+    });
 
     // Turn { top: 'M', jogger: 'L', shoe: '9' } into a display string
     function formatSizes(item, plain) {

@@ -1,4 +1,5 @@
 import { CheckoutError, json, readBody } from '../../lib/stitch-checkout.mjs';
+import { processPaymentEvent } from '../../lib/orders.mjs';
 // https://express.stitch.money/api-docs/webhooks
 // https://docs.svix.com/receiving/verifying-payloads/how-manual
 export async function verifyWebhook(bytes, headers, secret, now = Date.now()) {
@@ -26,17 +27,24 @@ export async function verifyWebhook(bytes, headers, secret, now = Date.now()) {
 export async function onRequest({ request, env }) {
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { Allow: 'POST' } });
     if (env.STITCH_MODE !== 'test' || !env.STITCH_WEBHOOK_SECRET) return json({ error: 'Test webhook not configured.' }, 503);
+    let payload;
     try {
         const bytes = await readBody(request, 65536);
         await verifyWebhook(bytes, request.headers, env.STITCH_WEBHOOK_SECRET);
-        const payload = JSON.parse(new TextDecoder().decode(bytes));
-        if (typeof payload?.id !== 'string' || payload.status !== 'PAID') return json({ error: 'Invalid payment event.' }, 400);
-        console.info('Stitch payment status', { eventId: request.headers.get('svix-id'), paymentId: payload.id, status: payload.status });
-        // TODO: Store orders and deduplicate svix-id durably before email or fulfilment.
-        // Log-only handler tolerates repeated deliveries; no fulfilment occurs.
-        // Use a separate test endpoint/secret: payload has no test/live discriminator.
-        return json({ received: true });
+        payload = JSON.parse(new TextDecoder().decode(bytes));
     } catch (error) {
         return json({ error: 'Invalid webhook.' }, error instanceof CheckoutError ? error.status : 400);
+    }
+    if (typeof payload?.id !== 'string' || !payload.id || payload.status !== 'PAID' || !Number.isSafeInteger(payload.amount)) return json({ error: 'Invalid payment event.' }, 400);
+    // Other Express products can share the account webhook; they are not cart orders.
+    if (['CONSENT', 'SUBSCRIPTION', 'TERMINAL'].includes(payload.type)) return json({ received: true });
+    if (payload.type !== 'LINK' || typeof payload.linkId !== 'string' || !payload.linkId) return json({ error: 'Invalid payment event.' }, 400);
+    try {
+        await processPaymentEvent(env, payload, request.headers.get('svix-id'));
+        return json({ received: true });
+    } catch (error) {
+        // KV/API/email failures must be retried, not acknowledged as processed.
+        console.warn('Stitch order processing deferred', { eventId: request.headers.get('svix-id') });
+        return json({ error: 'Order processing is not complete. Please retry.' }, error instanceof CheckoutError ? error.status : 503);
     }
 }

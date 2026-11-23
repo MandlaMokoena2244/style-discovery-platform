@@ -4,25 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="description" content="FashForge test checkout.">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="Your FashForge order confirmation.">
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <title>Back from test checkout | FashForge</title>
+    <title>Your order | FashForge</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <meta property="og:title" content="Back from test checkout | FashForge">
-    <meta property="og:description" content="FashForge test checkout.">
+    <meta property="og:title" content="Your order | FashForge">
+    <meta property="og:description" content="Your FashForge order confirmation.">
     <meta property="og:url" content="https://fashforge.co.za/checkout-success.html">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
     <meta property="og:image:alt" content="FashForge">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Back from test checkout | FashForge">
-    <meta name="twitter:description" content="FashForge test checkout.">
+    <meta name="twitter:title" content="Your order | FashForge">
+    <meta name="twitter:description" content="Your FashForge order confirmation.">
     <meta name="twitter:image" content="https://fashforge.co.za/images/og-fashforge.jpg">
 </head>
 <body>
@@ -53,16 +54,20 @@
 
     <section class="page-hero">
         <div class="page-hero-content">
-            <span class="section-label">Test checkout</span>
-            <h1>Back from test checkout</h1>
+            <span class="section-label">Your order</span>
+            <h1 id="order-heading">Your order</h1>
         </div>
     </section>
 
     <section class="section">
         <div class="payment-result">
-            <p>You have returned from Stitch test checkout. This page does not confirm payment. Only a verified payment notification can confirm the result. No real order will be fulfilled, and your cart has been kept.</p>
+            <p id="order-message" role="status" aria-live="polite">We're confirming your payment. This may take a moment.</p>
+            <p id="order-total"></p>
+            <p><a id="order-retry" href="index.html" hidden>Return to your cart and try again</a></p>
+            <button id="order-refresh" type="button" hidden>Check payment status again</button>
+            <noscript><p>Please enable JavaScript to check your payment, or contact us for help.</p></noscript>
             <p>If you need help, WhatsApp us on <a href="https://wa.me/27672565980" target="_blank" rel="noopener noreferrer">+27 67 256 5980</a>.</p>
-            <p><a href="checkout-cancelled.html">I left checkout without completing payment</a></p><p><a href="index.html">Back to FashForge</a></p>
+            <p><a href="index.html">Back to FashForge</a></p>
         </div>
     </section>
 
@@ -115,5 +120,6 @@
     <script src="site-config.js"></script>
     <script src="catalogue-ui.js"></script>
     <script src="script.js"></script>
+    <script src="checkout-status.js"></script>
 </body>
 </html>

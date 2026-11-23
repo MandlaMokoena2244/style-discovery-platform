@@ -17,19 +17,278 @@ const catalogueLoader = registerHooks({
         return nextLoad(url, context);
     }
 });
-let priceCart, validateCustomer, delivery, requireTestConfig, checkout, webhook, verifyWebhook;
+let priceCart, validateCustomer, delivery, requireTestConfig, checkout, webhook, verifyWebhook, orderStatus;
 try {
     ({ priceCart, validateCustomer, delivery, requireTestConfig } = await import('../lib/stitch-checkout.mjs'));
     ({ onRequest: checkout } = await import('../functions/api/checkout.js'));
     ({ onRequest: webhook, verifyWebhook } = await import('../functions/api/stitch-webhook.js'));
+    ({ onRequest: orderStatus } = await import('../functions/api/order-status.js'));
 } finally {
     catalogueLoader.deregister();
 }
 
+const orderRef = 'FF-TEST-12345678-1234-4234-8234-123456789abc';
+async function orderFixture(run, overrides = {}) {
+    const key = randomBytes(32);
+    const orders = new MemoryKV();
+    const totals = priceCart([item], 'door');
+    const order = {
+        reference: orderRef, mode: 'test', status: 'pending', paymentLinkId: 'order-link',
+        customer: validateCustomer({ ...customer, note: 'At the gate' }), deliveryMethod: 'door',
+        ...totals, currency: 'ZAR', createdAt: new Date().toISOString()
+    };
+    await orders.put(orderRef, JSON.stringify(order));
+    const config = {
+        ...env, ORDERS: orders, STITCH_WEBHOOK_SECRET: key.toString('base64'),
+        RESEND_API_KEY: 'mock-resend-key', ORDER_NOTIFY_EMAIL: 'owner@example.com',
+        ORDER_FROM_EMAIL: 'shop@example.com', ...overrides
+    };
+    const link = { id: order.paymentLinkId, merchantReference: orderRef, amount: order.total, status: 'PAID', paymentId: 'payment-1', paidAt: new Date().toISOString() };
+    const attempts = [];
+    const sent = new Map();
+    const control = { failCustomerOnce: false, linkReads: 0 };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url, options) => {
+        if (url === 'https://express.stitch.money/api/v1/token') return Response.json({ success: true, data: { accessToken: 'order-mock-token' } });
+        if (url === 'https://express.stitch.money/api/v1/payment-links/order-link') {
+            assert.equal(options.method, 'GET');
+            assert.ok(options.headers.Authorization.startsWith('Bearer '));
+            control.linkReads++;
+            return Response.json({ success: true, data: { payment: link } });
+        }
+        assert.equal(url, 'https://api.resend.com/emails');
+        assert.equal(options.headers.Authorization, 'Bearer mock-resend-key');
+        const body = JSON.parse(options.body);
+        const idempotencyKey = options.headers['Idempotency-Key'];
+        attempts.push({ body, idempotencyKey });
+        if (control.failCustomerOnce && body.to[0] === customer.email) {
+            control.failCustomerOnce = false;
+            return Response.json({ error: 'provider unavailable' }, { status: 503 });
+        }
+        if (sent.has(idempotencyKey)) assert.deepEqual(body, sent.get(idempotencyKey).body);
+        else sent.set(idempotencyKey, { body, id: 'email-' + sent.size });
+        return Response.json({ id: sent.get(idempotencyKey).id });
+    };
+    function event(id = 'event-1', changes = {}) {
+        const payload = { id: 'payment-1', status: 'PAID', type: 'LINK', linkId: order.paymentLinkId, amount: order.total, ...changes };
+        const body = JSON.stringify(payload);
+        const timestamp = String(Math.floor(Date.now() / 1000));
+        const signature = createHmac('sha256', key).update(id + '.' + timestamp + '.' + body).digest('base64');
+        return new Request('https://preview.example.com/api/stitch-webhook', {
+            method: 'POST', body,
+            headers: { 'svix-id': id, 'svix-timestamp': timestamp, 'svix-signature': 'v1,' + signature }
+        });
+    }
+    const statusRequest = () => new Request('https://preview.example.com/api/order-status?ref=' + orderRef);
+    try { await run({ config, orders, order, link, attempts, sent, control, event, statusRequest }); }
+    finally { globalThis.fetch = originalFetch; }
+}
+
+test('paid webhook reconciles reference and amount, stores status and sends both emails once', async () => {
+    await orderFixture(async ({ config, orders, order, attempts, sent, event, statusRequest, control }) => {
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        assert.equal((await orders.get(orderRef, 'json')).status, 'paid');
+        assert.equal(sent.size, 2);
+        const owner = attempts[0].body;
+        for (const detail of [customer.name, customer.email, customer.mobile.slice(1), customer.street, customer.suburb, customer.city, customer.province, customer.postalCode, product.name, product.id, item.size, 'At the gate']) assert.ok(owner.text.includes(detail));
+        assert.equal(attempts[1].body.to[0], customer.email);
+        assert.ok(attempts[1].body.text.includes('test payment was successful'));
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        assert.equal(control.linkReads, 1);
+        assert.equal(attempts.length, 2);
+        // A distinct delivery ID for the same payment also cannot resend emails.
+        assert.equal((await webhook({ request: event('event-2'), env: config })).status, 200);
+        assert.equal(attempts.length, 2);
+        const response = await orderStatus({ request: statusRequest(), env: config });
+        assert.equal(response.headers.get('Cache-Control'), 'no-store');
+        assert.equal(response.headers.get('X-Order-Confirmation'), 'sent');
+        assert.deepEqual(await response.json(), { status: 'paid', total: order.total });
+    });
+});
+
+test('partial email failure retries the unsent recipient, not the completed owner email', async () => {
+    await orderFixture(async ({ config, orders, attempts, sent, event, control }) => {
+        control.failCustomerOnce = true;
+        assert.equal((await webhook({ request: event(), env: config })).status, 503);
+        assert.equal((await orders.get(orderRef, 'json')).status, 'paid');
+        assert.equal(await orders.get('event:event-1'), null);
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        assert.equal(sent.size, 2);
+        assert.equal(attempts.filter(a => a.body.to[0] === 'owner@example.com').length, 1);
+        const customerAttempts = attempts.filter(a => a.body.to[0] === customer.email);
+        assert.equal(customerAttempts.length, 2);
+        assert.equal(customerAttempts[0].idempotencyKey, customerAttempts[1].idempotencyKey);
+    });
+});
+
+test('stale KV receipts and concurrent deliveries still use identical Resend idempotency keys', async () => {
+    await orderFixture(async ({ config, orders, attempts, sent, event }) => {
+        const get = orders.get.bind(orders);
+        orders.get = (key, type) => key.startsWith('email:') || key.startsWith('event:') ? Promise.resolve(null) : get(key, type);
+        const responses = await Promise.all([webhook({ request: event(), env: config }), webhook({ request: event(), env: config })]);
+        assert.ok(responses.every(response => response.status === 200));
+        assert.equal(sent.size, 2);
+        assert.equal(new Set(attempts.map(a => a.idempotencyKey)).size, 2);
+    });
+});
+
+test('missing Resend key skips email, keeps paid status and acknowledges retries', async () => {
+    await orderFixture(async ({ config, orders, attempts, event, statusRequest }) => {
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        assert.equal(attempts.length, 0);
+        assert.equal((await orders.get('email:' + orderRef + ':customer', 'json')).status, 'skipped');
+        const response = await orderStatus({ request: statusRequest(), env: config });
+        assert.equal((await response.json()).status, 'paid');
+        assert.equal(response.headers.get('X-Order-Confirmation'), 'skipped');
+    }, { RESEND_API_KEY: '' });
+});
+
+test('late retries outside provider idempotency retention do not send another email', async () => {
+    await orderFixture(async ({ config, link, attempts, event, orders }) => {
+        link.paidAt = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        assert.equal(attempts.length, 0);
+        assert.equal((await orders.get('email:' + orderRef + ':owner', 'json')).reason, 'retry_window_expired');
+    });
+});
+
+test('mismatched amount, payment ID, foreign reference and unsupported statuses cause no email', async () => {
+    await orderFixture(async ({ config, order, link, attempts, event, orders }) => {
+        assert.equal((await webhook({ request: event('amount', { amount: 1 }), env: config })).status, 409);
+        assert.equal((await webhook({ request: event('id', { id: 'wrong-payment' }), env: config })).status, 409);
+        link.amount++;
+        assert.equal((await webhook({ request: event('link-amount'), env: config })).status, 409);
+        link.amount = order.total;
+        link.merchantReference = 'other-merchant-reference';
+        assert.equal((await webhook({ request: event('reference'), env: config })).status, 503);
+        link.merchantReference = orderRef;
+        assert.equal((await webhook({ request: event('cancel', { status: 'CANCELLED' }), env: config })).status, 400);
+        assert.equal((await orders.get(orderRef, 'json')).status, 'pending');
+        assert.equal(attempts.length, 0);
+    });
+});
+
+test('missing order and KV failure remain retryable; paid marker survives partial storage failure', async () => {
+    await orderFixture(async ({ config, orders, order, event, attempts }) => {
+        orders.values.delete(orderRef);
+        assert.equal((await webhook({ request: event(), env: config })).status, 503);
+        assert.equal(await orders.get('event:event-1'), null);
+        await orders.put(orderRef, JSON.stringify(order));
+        const put = orders.put.bind(orders);
+        let fail = true;
+        orders.put = async (key, value) => {
+            if (key === orderRef && fail) { fail = false; throw new Error('KV unavailable'); }
+            return put(key, value);
+        };
+        assert.equal((await webhook({ request: event(), env: config })).status, 503);
+        assert.equal(attempts.length, 0);
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        assert.equal((await orders.get(orderRef, 'json')).status, 'paid');
+        assert.equal(attempts.length, 2);
+    });
+});
+
+test('order status exposes no personal data, maps cancelled/expired and never marks paid from redirect', async () => {
+    await orderFixture(async ({ config, orders, order, link, event, statusRequest, attempts }) => {
+        for (const [remote, local] of [['PENDING', 'pending'], ['CANCELLED', 'cancelled'], ['EXPIRED', 'failed'], ['PAID', 'pending']]) {
+            link.status = remote;
+            const response = await orderStatus({ request: statusRequest(), env: config });
+            assert.equal(response.status, 200);
+            assert.deepEqual(await response.json(), { status: local, total: order.total });
+        }
+        assert.equal(attempts.length, 0);
+        assert.equal((await webhook({ request: event(), env: config })).status, 200);
+        link.status = 'CANCELLED';
+        assert.equal((await (await orderStatus({ request: statusRequest(), env: config })).json()).status, 'paid');
+        const invalid = new Request('https://preview.example.com/api/order-status?ref=not-an-order&status=paid');
+        assert.equal((await orderStatus({ request: invalid, env: config })).status, 400);
+        const missing = new Request('https://preview.example.com/api/order-status?ref=FF-TEST-00000000-0000-4000-8000-000000000000');
+        assert.equal((await orderStatus({ request: missing, env: config })).status, 404);
+        assert.equal((await orderStatus({ request: statusRequest(), env: { ...config, STITCH_MODE: 'live' } })).status, 503);
+        assert.equal((await orders.get(orderRef, 'json')).status, 'paid');
+    });
+});
+
+test('checkout never exposes a link when its KV write fails or binding is absent', async () => {
+    const originalFetch = globalThis.fetch;
+    let creates = 0;
+    globalThis.fetch = async url => {
+        if (url.endsWith('/token')) return Response.json({ success: true, data: { accessToken: 'mock-token' } });
+        creates++;
+        return Response.json({ success: true, data: { payment: { id: 'failed-store-link', link: 'https://express.stitch.money/failed-store-link' } } });
+    };
+    try {
+        const body = { customer, items: [item], deliveryMethod: 'door' };
+        const absent = await checkout({ request: request(body), env: { ...env, ORDERS: undefined } });
+        assert.equal(absent.status, 503);
+        assert.equal(creates, 0);
+        const response = await checkout({ request: request(body), env: { ...env, ORDERS: { get() {}, async put() { throw new Error('storage failed'); } } } });
+        assert.equal(response.status, 502);
+        assert.ok(!(await response.text()).includes('failed-store-link'));
+    } finally { globalThis.fetch = originalFetch; }
+});
+
+async function statusPage(responses, search = '?ref=' + orderRef) {
+    const elements = Object.fromEntries(['order-message', 'order-heading', 'order-total', 'order-retry', 'order-refresh'].map(id => [id, { textContent: '', hidden: true, addEventListener() {} }]));
+    const timers = [];
+    const calls = [];
+    let cleared = 0;
+    const context = {
+        document: { getElementById: id => elements[id] },
+        window: { location: { search }, dispatchEvent() {} },
+        localStorage: { removeItem(key) { assert.equal(key, 'fashforge_cart'); cleared++; } },
+        URLSearchParams, Intl, AbortSignal, Event,
+        setTimeout(callback) { timers.push(callback); },
+        async fetch(url) { calls.push(url); return responses.shift(); }
+    };
+    vm.runInNewContext(readFileSync(new URL('../checkout-status.js', import.meta.url), 'utf8'), context);
+    await new Promise(setImmediate);
+    return { elements, timers, calls, cleared: () => cleared };
+}
+test('return page polls pending, clears cart only on paid, and reports actual email state', async () => {
+    const page = await statusPage([
+        Response.json({ status: 'pending', total: 10000 }),
+        Response.json({ status: 'paid', total: 10000 }, { headers: { 'X-Order-Confirmation': 'sent' } })
+    ]);
+    assert.equal(page.cleared(), 0);
+    assert.match(page.elements['order-message'].textContent, /confirming/);
+    await page.timers.shift()();
+    assert.equal(page.cleared(), 1);
+    assert.equal(page.elements['order-message'].textContent, "Payment successful, thank you! We've emailed your confirmation.");
+    assert.equal(page.timers.length, 0);
+    const skipped = await statusPage([Response.json({ status: 'paid', total: 10000 }, { headers: { 'X-Order-Confirmation': 'skipped' } })]);
+    assert.equal(skipped.cleared(), 1);
+    assert.ok(!skipped.elements['order-message'].textContent.includes("We've emailed"));
+});
+test('return page preserves cart for failed/cancelled, stops polling and ignores forged URL status', async () => {
+    for (const status of ['failed', 'cancelled']) {
+        const page = await statusPage([Response.json({ status, total: 10000 })]);
+        assert.equal(page.cleared(), 0);
+        assert.equal(page.elements['order-retry'].hidden, false);
+        assert.match(page.elements['order-message'].textContent, /didn't go through/);
+    }
+    const invalid = await statusPage([], '?status=paid');
+    assert.equal(invalid.cleared(), 0);
+    assert.equal(invalid.calls.length, 0);
+    const pending = await statusPage(Array.from({ length: 8 }, () => Response.json({ status: 'pending', total: 10000 })));
+    while (pending.timers.length) await pending.timers.shift()();
+    assert.equal(pending.calls.length, 8);
+    assert.equal(pending.cleared(), 0);
+    assert.equal(pending.elements['order-refresh'].hidden, false);
+});
+
 const product = catalogue.products.find(p => p.sellAlone && p.sizes?.length && p.inStock !== false);
 const item = { id: product.id, size: product.sizes[0], qty: 1 };
 const customer = { name: 'Test Customer', email: 'test@example.com', mobile: '0820000000', street: '1 Test Street', suburb: 'Test Suburb', city: 'Johannesburg', province: 'Gauteng', postalCode: '2000', country: 'ZA' };
-const env = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-placeholder', STITCH_CLIENT_SECRET: 'opaque-placeholder', STITCH_SITE_URL: 'https://preview.example.com' };
+class MemoryKV {
+    values = new Map();
+    async get(key, type) {
+        const value = this.values.get(key);
+        return value == null ? null : type === 'json' ? JSON.parse(value) : value;
+    }
+    async put(key, value) { this.values.set(key, value); }
+}
+const env = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-placeholder', STITCH_CLIENT_SECRET: 'opaque-placeholder', STITCH_SITE_URL: 'https://preview.example.com', ORDERS: new MemoryKV() };
 function request(body, options = {}) {
     return new Request('https://preview.example.com/api/checkout', {
         method: 'POST', headers: { Origin: 'https://preview.example.com', 'Content-Type': 'application/json', ...options.headers },
@@ -79,17 +338,19 @@ test('browser flag selects Stitch and return pages preserve the cart without cla
         const html = readFileSync(new URL('../' + name, import.meta.url), 'utf8');
         assert.match(html, /name="robots" content="noindex, nofollow"/);
         assert.ok(!html.includes('localStorage.removeItem'));
-        assert.match(html, /cart has been kept/);
+        if (name === 'checkout-success.html') assert.match(html, /checkout-status.js/);
+        else assert.match(html, /cart has been kept/);
         assert.ok(!readFileSync(new URL('../sitemap.xml', import.meta.url), 'utf8').includes(name));
     }
 });
 test('checkout HTTP guardrails and documented API contract', async () => {
+    const contractEnv = { ...env, STITCH_CLIENT_ID: 'test-contract-placeholder' };
     const body = { customer, items: [{ ...item, price: 1 }], deliveryMethod: 'door' };
     assert.equal((await checkout({ request: request(body), env: {} })).status, 503);
-    assert.equal((await checkout({ request: request(body, { headers: { Origin: 'https://attacker.example' } }), env })).status, 403);
-    assert.equal((await checkout({ request: request('{'), env })).status, 400);
-    assert.equal((await checkout({ request: request(' '.repeat(17000)), env })).status, 413);
-    assert.equal((await checkout({ request: new Request('https://preview.example.com/api/checkout'), env })).status, 405);
+    assert.equal((await checkout({ request: request(body, { headers: { Origin: 'https://attacker.example' } }), env: contractEnv })).status, 403);
+    assert.equal((await checkout({ request: request('{'), env: contractEnv })).status, 400);
+    assert.equal((await checkout({ request: request(' '.repeat(17000)), env: contractEnv })).status, 413);
+    assert.equal((await checkout({ request: new Request('https://preview.example.com/api/checkout'), env: contractEnv })).status, 405);
     const originalFetch = globalThis.fetch;
     const calls = [];
     globalThis.fetch = async (url, options) => {
@@ -97,22 +358,35 @@ test('checkout HTTP guardrails and documented API contract', async () => {
         return Response.json({ success: true, data: url.endsWith('/token') ? { accessToken: 'mock-token' } : { payment: { id: 'mock-link', link: 'https://express.stitch.money/mock-link' } } });
     };
     try {
-        const result = await checkout({ request: request(body), env });
+        const result = await checkout({ request: request(body), env: contractEnv });
         assert.equal(result.status, 200);
         const data = await result.json();
         assert.equal(calls[0].url, 'https://express.stitch.money/api/v1/token');
-        assert.deepEqual(calls[0].body, { clientId: env.STITCH_CLIENT_ID, clientSecret: env.STITCH_CLIENT_SECRET, scope: 'client_paymentrequest' });
+        assert.deepEqual(calls[0].body, { clientId: contractEnv.STITCH_CLIENT_ID, clientSecret: contractEnv.STITCH_CLIENT_SECRET, scope: 'client_paymentrequest' });
         assert.equal(calls[1].url, 'https://express.stitch.money/api/v1/payment-links');
         assert.equal(calls[1].options.headers.Authorization, 'Bearer mock-token');
         assert.equal(calls[1].body.amount, priceCart([item], 'door').total);
         assert.equal(calls[1].body.collectDeliveryDetails, false);
         assert.equal(calls[1].body.deliveryFee, undefined);
-        assert.equal(new URL(data.redirectUrl).searchParams.get('redirect_url'), env.STITCH_SITE_URL + '/checkout-success.html');
+        const callback = new URL(new URL(data.redirectUrl).searchParams.get('redirect_url'));
+        assert.equal(callback.origin + callback.pathname, contractEnv.STITCH_SITE_URL + '/checkout-success.html');
+        assert.equal(callback.searchParams.get('ref'), data.reference);
+        const stored = await contractEnv.ORDERS.get(data.reference, 'json');
+        assert.equal(stored.status, 'pending');
+        assert.equal(stored.customer.email, customer.email);
+        assert.equal(stored.customer.country, 'ZA');
+        assert.equal(stored.customer.street, customer.street);
+        assert.equal(stored.deliveryMethod, 'door');
+        assert.equal(stored.items[0].unitPrice, product.price * 100);
+        assert.equal(stored.items[0].name, product.name);
+        assert.equal(stored.total, data.amount);
+        assert.equal(stored.paymentLinkId, 'mock-link');
+        assert.ok(stored.createdAt);
         assert.ok(!JSON.stringify(data).includes('mock-token'));
-        await checkout({ request: request(body), env });
+        await checkout({ request: request(body), env: contractEnv });
         assert.equal(calls.filter(c => c.url.endsWith('/token')).length, 1);
         globalThis.fetch = async () => Response.json({ success: false, secret: 'never-return-this' }, { status: 500 });
-        const failure = await checkout({ request: request(body), env });
+        const failure = await checkout({ request: request(body), env: contractEnv });
         assert.equal(failure.status, 502);
         assert.ok(!(await failure.text()).includes('never-return-this'));
     } finally { globalThis.fetch = originalFetch; }
@@ -135,7 +409,7 @@ test('webhook raw-body HMAC, rotations, timestamps, retries and tampering: ' + (
     await assert.rejects(verifyWebhook(bytes, headers, secret, Number(timestamp) * 1000 + 301000));
     await assert.rejects(verifyWebhook(bytes, headers, secret, Number(timestamp) * 1000 - 301000));
     await assert.rejects(verifyWebhook(bytes, new Headers(), secret));
-    for (let i = 0; i < 2; i++) assert.equal((await webhook({ request: new Request('https://preview.example.com/api/stitch-webhook', { method: 'POST', headers, body: raw }), env: { STITCH_MODE: 'test', STITCH_WEBHOOK_SECRET: secret } })).status, 200);
+    assert.equal((await webhook({ request: new Request('https://preview.example.com/api/stitch-webhook', { method: 'POST', headers, body: raw }), env: { STITCH_MODE: 'test', STITCH_WEBHOOK_SECRET: secret } })).status, 503);
     assert.equal((await webhook({ request: new Request('https://preview.example.com/api/stitch-webhook', { method: 'POST', headers, body: raw + ' ' }), env: { STITCH_MODE: 'test', STITCH_WEBHOOK_SECRET: secret } })).status, 400);
 });
 }

@@ -2364,6 +2364,16 @@ h1, h2, h3, h4 {
     color: var(--text-dark);
     border-bottom: 1px solid var(--accent);
 }
+.payment-result button {
+    color: var(--text-dark);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--accent);
+    font: inherit;
+    padding: 0.25rem 0;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
 
 .form-thanks,
 .form-error {

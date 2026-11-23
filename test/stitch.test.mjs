@@ -11,7 +11,7 @@ import { onRequest as webhook, verifyWebhook } from '../functions/api/stitch-web
 const product = catalogue.products.find(p => p.sellAlone && p.sizes?.length && p.inStock !== false);
 const item = { id: product.id, size: product.sizes[0], qty: 1 };
 const customer = { name: 'Test Customer', email: 'test@example.com', mobile: '0820000000', street: '1 Test Street', suburb: 'Test Suburb', city: 'Johannesburg', province: 'Gauteng', postalCode: '2000', country: 'ZA' };
-const env = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-placeholder', STITCH_CLIENT_SECRET: 'test-placeholder', STITCH_SITE_URL: 'https://preview.example.com' };
+const env = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-placeholder', STITCH_CLIENT_SECRET: 'opaque-placeholder', STITCH_SITE_URL: 'https://preview.example.com' };
 function request(body, options = {}) {
     return new Request('https://preview.example.com/api/checkout', {
         method: 'POST', headers: { Origin: 'https://preview.example.com', 'Content-Type': 'application/json', ...options.headers },
@@ -43,7 +43,11 @@ test('customer validation and live credentials fail closed', () => {
     for (const change of [{ country: 'US' }, { name: 'A' }, { email: 'bad' }, { mobile: '123' }, { province: 'Unknown' }, { postalCode: '123' }]) assert.throws(() => validateCustomer({ ...customer, ...change }));
     assert.throws(() => requireTestConfig({ ...env, STITCH_MODE: 'live' }));
     assert.throws(() => requireTestConfig({ ...env, STITCH_CLIENT_ID: 'live-placeholder' }));
-    assert.throws(() => requireTestConfig({ ...env, STITCH_CLIENT_SECRET: 'live-placeholder' }));
+    assert.doesNotThrow(() => requireTestConfig(env));
+    assert.doesNotThrow(() => requireTestConfig({ ...env, STITCH_CLIENT_SECRET: 'test-placeholder' }));
+    for (const secret of [undefined, null, '', '   ', 123]) {
+        assert.throws(() => requireTestConfig({ ...env, STITCH_CLIENT_SECRET: secret }));
+    }
 });
 test('browser flag selects Stitch and return pages preserve the cart without claiming payment', () => {
     const script = readFileSync(new URL('../script.js', import.meta.url), 'utf8');
@@ -94,15 +98,20 @@ test('checkout HTTP guardrails and documented API contract', async () => {
         assert.ok(!(await failure.text()).includes('never-return-this'));
     } finally { globalThis.fetch = originalFetch; }
 });
-test('webhook raw-body HMAC, rotations, timestamps, retries and tampering', async () => {
+for (const prefix of ['', 'whsec_']) {
+test('webhook raw-body HMAC, rotations, timestamps, retries and tampering: ' + (prefix || 'unprefixed'), async () => {
     const key = randomBytes(32);
-    const secret = 'whsec_' + key.toString('base64');
+    const secret = prefix + key.toString('base64');
     const timestamp = String(Math.floor(Date.now() / 1000));
     const raw = JSON.stringify({ id: 'test-payment', status: 'PAID', amount: 100, type: 'LINK', linkId: 'test-link' });
     const signature = createHmac('sha256', key).update('msg-test.' + timestamp + '.' + raw).digest('base64');
     const headers = new Headers({ 'svix-id': 'msg-test', 'svix-timestamp': timestamp, 'svix-signature': 'v1,invalid v1,' + signature });
     const bytes = new TextEncoder().encode(raw);
     await verifyWebhook(bytes, headers, secret);
+    for (const invalidSecret of [undefined, '', 'whsec_', 'not-base64!', 'whsec_not-base64!']) {
+        await assert.rejects(verifyWebhook(bytes, headers, invalidSecret));
+    }
+    await assert.rejects(verifyWebhook(bytes, headers, prefix + randomBytes(32).toString('base64')));
     await assert.rejects(verifyWebhook(new TextEncoder().encode(raw + ' '), headers, secret));
     await assert.rejects(verifyWebhook(bytes, headers, secret, Number(timestamp) * 1000 + 301000));
     await assert.rejects(verifyWebhook(bytes, headers, secret, Number(timestamp) * 1000 - 301000));
@@ -110,3 +119,4 @@ test('webhook raw-body HMAC, rotations, timestamps, retries and tampering', asyn
     for (let i = 0; i < 2; i++) assert.equal((await webhook({ request: new Request('https://preview.example.com/api/stitch-webhook', { method: 'POST', headers, body: raw }), env: { STITCH_MODE: 'test', STITCH_WEBHOOK_SECRET: secret } })).status, 200);
     assert.equal((await webhook({ request: new Request('https://preview.example.com/api/stitch-webhook', { method: 'POST', headers, body: raw + ' ' }), env: { STITCH_MODE: 'test', STITCH_WEBHOOK_SECRET: secret } })).status, 400);
 });
+}

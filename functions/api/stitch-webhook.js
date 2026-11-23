@@ -6,8 +6,10 @@ export async function verifyWebhook(bytes, headers, secret, now = Date.now()) {
     const timestamp = headers.get('svix-timestamp');
     const signatures = headers.get('svix-signature');
     if (!id || !/^\d+$/.test(timestamp || '') || !signatures || Math.abs(now / 1000 - Number(timestamp)) > 300) throw new Error('Invalid signature');
-    if (!secret?.startsWith('whsec_')) throw new Error('Invalid configuration');
-    const keyBytes = Uint8Array.from(atob(secret.slice(6)), c => c.charCodeAt(0));
+    if (typeof secret !== 'string' || !secret) throw new Error('Invalid configuration');
+    const encodedSecret = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+    const keyBytes = Uint8Array.from(atob(encodedSecret), c => c.charCodeAt(0));
+    if (!keyBytes.length) throw new Error('Invalid configuration');
     const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
     const prefix = new TextEncoder().encode(id + '.' + timestamp + '.');
     const signed = new Uint8Array(prefix.length + bytes.length);

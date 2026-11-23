@@ -22,15 +22,15 @@ In project **fashforge**, configure these variables for **Preview only**:
 | CHECKOUT_ENABLED | true |
 | STITCH_MODE | test |
 | STITCH_CLIENT_ID | Express test client ID, starting with test- |
-| STITCH_CLIENT_SECRET | Express test secret, starting with test-; encrypted secret |
-| STITCH_WEBHOOK_SECRET | Signing secret returned when registering the test webhook; encrypted secret |
+| STITCH_CLIENT_SECRET | Opaque Express test client secret; encrypted secret (no prefix required) |
+| STITCH_WEBHOOK_SECRET | Base64 signing secret returned when registering the test webhook; encrypted secret (optional whsec_ prefix accepted) |
 | STITCH_SITE_URL | Exact HTTPS preview origin, without a path or trailing slash |
 
 Leave production checkout disabled and do not add live credentials. Browser code
 never receives credentials. The API independently requires CHECKOUT_ENABLED=true,
-STITCH_MODE=test and test-prefixed credentials. These guards cannot be bypassed by
+STITCH_MODE=test, a test-prefixed client ID and a nonempty client secret. These guards cannot be bypassed by
 changing the browser flag. A prefix mismatch fails closed; resolve any mismatch
-against your account's official documentation, never weaken the guard for live keys.
+against your account's official documentation, never weaken the client-ID guard for live keys.
 
 Keep the static output directory at the repository root so Pages discovers
 functions/api/*.js. No npm dependency or static-site build step is needed.

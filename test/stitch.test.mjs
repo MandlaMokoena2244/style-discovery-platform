@@ -125,8 +125,10 @@ const catalogueLoader = registerHooks({
         return nextLoad(url, context);
     }
 });
+let customerEmail, enrichItems, emailMoney, emailDate, firstName, escapeHtml;
 let priceCart, validateCustomer, delivery, requireTestConfig, checkout, webhook, verifyWebhook, orderStatus;
 try {
+    ({ customerEmail, enrichItems, emailMoney, emailDate, firstName, escapeHtml } = await import('../lib/order-email.mjs'));
     ({ priceCart, validateCustomer, delivery, requireTestConfig } = await import('../lib/stitch-checkout.mjs'));
     ({ onRequest: checkout } = await import('../functions/api/checkout.js'));
     ({ onRequest: webhook, verifyWebhook } = await import('../functions/api/stitch-webhook.js'));
@@ -136,6 +138,68 @@ try {
 }
 
 const orderRef = 'FF-TEST-12345678-1234-4234-8234-123456789abc';
+function emailFixture() {
+    return { reference: orderRef, mode: 'test', customer: { name: 'Alex Smith', email: 'alex@example.com', street: '1 Test Street', suburb: 'Test Suburb', city: 'Johannesburg', province: 'Gauteng', postalCode: '2000', note: 'Private <note>' },
+        items: [{ id: 'example', name: 'BLACK TEE', size: 'M', qty: 2, unitPrice: 48500 }], subtotal: 97000, deliveryFee: 9900, total: 106900, deliveryMethod: 'door', paidAt: '2026-11-22T23:30:00Z', createdAt: '2026-11-21T12:00:00Z' };
+}
+const emailEnv = { ORDER_FROM_EMAIL: 'FashForge <orders@example.com>', STITCH_SITE_URL: 'https://preview.example.com' };
+const emailCatalogue = { products: [{ id: 'example', brand: 'Indie Nation', code: 'IN-05', image: 'images/products/test.webp' }] };
+test('branded email uses stored facts, catalogue enrichment, matching text and Johannesburg dates', () => {
+    const order = emailFixture();
+    const result = customerEmail(order, emailEnv, emailCatalogue);
+    assert.equal(firstName('  Alex Smith '), 'Alex');
+    assert.equal(firstName('Alex'), 'Alex');
+    assert.equal(emailMoney(106900), 'R1,069');
+    assert.equal(emailMoney(42000), 'R420');
+    assert.equal(emailMoney(42050), 'R420.50');
+    assert.equal(emailDate(order), '23 November 2026');
+    assert.equal(emailDate({ ...order, paidAt: undefined }), '21 November 2026');
+    for (const fragment of ['Dear Alex,', 'Black Tee', 'Indie Nation', 'Size M', 'Qty 2', 'R1,069', 'R970', 'Door delivery', 'R99', orderRef, '1 Test Street', 'South Africa', 'Card via Stitch']) {
+        assert.ok(result.text.includes(fragment), fragment);
+        assert.ok(result.html.includes(fragment), fragment);
+    }
+    assert.ok(result.html.includes('https://www.fashforge.co.za/images/products/test.webp'));
+    assert.ok(result.html.includes('https://www.fashforge.co.za/product.html?id=example'));
+    assert.ok(result.html.includes('https://preview.example.com/checkout-success.html?ref=' + orderRef));
+    assert.ok(!result.html.includes('IN-05'));
+    assert.ok(!result.text.includes('Private'));
+    assert.ok(!result.html.includes('Private'));
+    assert.equal(enrichItems(order, emailCatalogue)[0].code, 'IN-05');
+    assert.deepEqual(customerEmail(order, emailEnv, emailCatalogue), result);
+});
+test('email escapes untrusted content and safely handles absent catalogue products', () => {
+    const order = emailFixture();
+    order.customer.name = '<Alex> & "Smith"';
+    order.customer.street = '<script> & "street"';
+    order.customer.note = '<note> & secret';
+    order.items[0].name = '<ITEM> & "NAME"';
+    const source = { products: [{ id: 'example', brand: '<brand> & "quoted"', image: 'https://attacker.example/a.png' }] };
+    const result = customerEmail(order, emailEnv, source);
+    for (const raw of [order.customer.name, order.customer.street, order.customer.note, '<brand>', '<script>', '<ITEM>']) assert.ok(!result.html.includes(raw));
+    assert.ok(result.html.includes('&lt;script&gt; &amp; &quot;street&quot;'));
+    assert.ok(result.html.includes('&lt;brand&gt; &amp; &quot;quoted&quot;'));
+    assert.ok(!result.html.includes('attacker.example'));
+    assert.equal(escapeHtml('<>&"'), '&lt;&gt;&amp;&quot;');
+    const fallback = customerEmail(emailFixture(), emailEnv, { products: [] });
+    assert.ok(fallback.html.includes('Black Tee'));
+    assert.ok(!fallback.html.includes('Indie Nation'));
+    assert.equal(enrichItems(order, { products: [] })[0].image, '');
+});
+test('email test banner, free locker delivery and one-size fallback', () => {
+    const order = emailFixture();
+    order.deliveryMethod = 'locker'; order.deliveryFee = 0; order.items[0].size = '';
+    const testEmail = customerEmail(order, emailEnv, { products: [] });
+    for (const output of [testEmail.text, testEmail.html]) {
+        assert.ok(output.includes('Test order — no items will be dispatched'));
+        assert.ok(output.includes('Courier Guy locker'));
+        assert.ok(output.includes('Free'));
+        assert.ok(output.includes('One size'));
+    }
+    const live = customerEmail({ ...order, mode: 'live' }, emailEnv, { products: [] });
+    assert.equal(live.subject, 'Your FashForge order is confirmed');
+    assert.ok(!live.html.includes('Test order — no items will be dispatched'));
+    assert.ok(!live.text.includes('Test order — no items will be dispatched'));
+});
 async function orderFixture(run, overrides = {}) {
     const key = randomBytes(32);
     const orders = new MemoryKV();
@@ -200,7 +264,10 @@ test('paid webhook reconciles reference and amount, stores status and sends both
         const owner = attempts[0].body;
         for (const detail of [customer.name, customer.email, customer.mobile.slice(1), customer.street, customer.suburb, customer.city, customer.province, customer.postalCode, product.name, product.id, item.size, 'At the gate']) assert.ok(owner.text.includes(detail));
         assert.equal(attempts[1].body.to[0], customer.email);
-        assert.ok(attempts[1].body.text.includes('test payment was successful'));
+        assert.ok(attempts[1].body.text.includes('Order confirmed'));
+        assert.equal(attempts[1].body.subject, '[TEST] Your FashForge order is confirmed');
+        assert.equal(attempts[1].body.reply_to, 'hello@fashforge.co.za');
+        assert.ok(attempts[1].body.html.includes('Order summary'));
         assert.equal((await webhook({ request: event(), env: config })).status, 200);
         assert.equal(control.linkReads, 1);
         assert.equal(attempts.length, 2);
@@ -226,6 +293,7 @@ test('partial email failure retries the unsent recipient, not the completed owne
         const customerAttempts = attempts.filter(a => a.body.to[0] === customer.email);
         assert.equal(customerAttempts.length, 2);
         assert.equal(customerAttempts[0].idempotencyKey, customerAttempts[1].idempotencyKey);
+        assert.deepEqual(customerAttempts[0].body, customerAttempts[1].body);
     });
 });
 

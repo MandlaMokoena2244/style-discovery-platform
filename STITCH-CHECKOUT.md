@@ -126,8 +126,8 @@ Additional KV records:
 - email:<reference>:owner and email:<reference>:customer: sent/skipped receipts
 
 A paid order triggers two Resend POST https://api.resend.com/emails requests with
-bearer auth and plain-text bodies: full details to the owner and a short customer
-confirmation. Stable per-order/per-recipient Idempotency-Key headers protect
+bearer auth: complete operational plain text to the owner (including catalogue SKU),
+and a branded HTML + plain-text customer confirmation. Stable per-order/per-recipient Idempotency-Key headers protect
 against concurrent deliveries while KV receipts are propagating.
 
 The event receipt is saved only after both emails are sent or explicitly skipped.
@@ -171,7 +171,7 @@ before broader use.
 2. Add a sized product and use an email/address you control. Inspect the pending
    KV record before payment, including catalogue prices, sizes, address and notes.
 3. Complete an Express test payment. Check paid status, one owner email with all
-   details, one short customer email, and the return page/cart update.
+   details, one branded customer email, and the return page/cart update.
 4. Replay the signed event in Stitch. Confirm no additional email. Simulate a
    transient Resend failure and confirm only unfinished sends retry.
 5. Remove RESEND_API_KEY for a new test order: the webhook should still return 200,
@@ -208,3 +208,28 @@ delivery still need verification.
 Before any live rollout: transactional concurrency control, checkout-attempt
 idempotency, inventory reservation, retention policy, rate limits, locker lookup
 and operational handling of emails beyond the retry window remain necessary.
+
+## Branded customer confirmation
+
+`lib/order-email.mjs` builds the customer HTML and equivalent plain text from stored
+order values. Reply-To is hello@fashforge.co.za. Test orders have a [TEST] subject
+and a black/gold no-dispatch banner; payment guards remain test-only. The email
+uses table layout, inline styles, a mobile padding adjustment, escaped content,
+Johannesburg dates, and the site's rand formatting. No VAT line or tracking button
+is shown. Delivery notes remain owner-only.
+
+Brand, image and internal SKU are looked up by item ID in bundled products.json
+at send time. Stored names and prices remain authoritative; all-uppercase names
+are title-cased only for customer display. Missing catalogue entries omit brand
+and image without blocking delivery. Images use https://www.fashforge.co.za;
+the view-order button uses STITCH_SITE_URL. SKU is included only for the owner.
+
+notifyPaidOrder remains the only send path. Receipt keys, skip conditions,
+idempotency keys and retry window are unchanged. Builders use no current time
+or random values. Keep catalogue, sender, site URL and template deployment stable
+during pending retries so Resend receives identical bodies for the same key.
+The existing partial-failure test checks exact body equality.
+
+The supplied brief contains design tokens but no actual mockup/screenshots were
+available for comparison. Verify desktop/mobile rendering in real mail clients
+and a fresh test-order delivery after deployment.

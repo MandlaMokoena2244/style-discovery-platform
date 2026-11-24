@@ -9,6 +9,8 @@ function formatZar(amount) {
 window.FASHFORGE = {
     // Set true to show full-outfit sections, style pages, and the homepage outfits block again.
     showOutfits: false,
+    // Defaults off; the server enables configured test/live checkout via /api/site-config.
+    checkoutEnabled: false,
     legalName: 'FashForge (Pty) Ltd',
     registration: '2026/919971/07',
     email: 'hello@fashforge.co.za',

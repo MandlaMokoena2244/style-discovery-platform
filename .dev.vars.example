@@ -1,0 +1,13 @@
+# Placeholder names only. Never commit .dev.vars or real credentials.
+# Use test in Preview, live in Production; keep keys and KV namespaces separate.
+CHECKOUT_ENABLED=<TRUE_OR_FALSE>
+STITCH_MODE=<TEST_OR_LIVE>
+STITCH_CLIENT_ID=<MODE_SPECIFIC_CLIENT_ID>
+STITCH_CLIENT_SECRET=<MODE_SPECIFIC_CLIENT_SECRET>
+STITCH_WEBHOOK_SECRET=<MODE_SPECIFIC_ENDPOINT_SIGNING_SECRET>
+STITCH_SITE_URL=<HTTPS_SITE_ORIGIN>
+# Bind ORDERS to fashforge-orders-live in Production and a separate test namespace in Preview.
+# ORDERS is a KV binding, not a string variable.
+ORDER_NOTIFY_EMAIL=<OWNER_EMAIL_ADDRESS>
+ORDER_FROM_EMAIL=<RESEND_VERIFIED_FROM_ADDRESS>
+RESEND_API_KEY=<RESEND_SENDING_KEY>

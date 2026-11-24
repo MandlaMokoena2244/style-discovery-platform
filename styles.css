@@ -1506,6 +1506,25 @@ h1, h2, h3, h4 {
 }
 .btn-add-cart:hover { background: var(--accent); }
 .btn-add-cart.added { background: var(--accent); }
+.product-whatsapp-secondary {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.75rem 0;
+    margin: 0 auto;
+    font-size: 0.875rem;
+    color: var(--text-dark);
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+}
+.product-whatsapp-secondary[hidden] { display: none; }
+.product-purchase-feedback {
+    margin: 0.5rem 0 1rem;
+    line-height: 1.5;
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+}
+.product-purchase-feedback[role="alert"] { color: #b42318; }
 .btn-add-cart:disabled {
     background: var(--primary);
     opacity: 0.45;
@@ -2363,6 +2382,16 @@ h1, h2, h3, h4 {
 .payment-result a {
     color: var(--text-dark);
     border-bottom: 1px solid var(--accent);
+}
+.payment-result button {
+    color: var(--text-dark);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--accent);
+    font: inherit;
+    padding: 0.25rem 0;
+    margin-bottom: 1rem;
+    cursor: pointer;
 }
 
 .form-thanks,

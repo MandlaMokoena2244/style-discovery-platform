@@ -228,6 +228,7 @@ const PAYMENT_PROVIDER = 'disabled';
 const ORDERS_PAUSED_NOTICE = "We're not taking payments yet. Online checkout is coming soon — you can save items in your cart and check back shortly.";
 
 function activePaymentProvider() {
+    if (typeof window !== 'undefined' && window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true) return 'stitch';
     if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
     if (PAYMENT_PROVIDER === 'disabled') return 'disabled';
     if (PAYMENT_PROVIDER !== 'whatsapp') {
@@ -286,8 +287,112 @@ function soldOutCartMessage(items) {
     return 'Some items are sold out. Remove them from your cart.';
 }
 
+// Product purchase helpers. Shared by the catalogue's product and outfit template.
+async function loadCheckoutFlag() {
+    try {
+        const response = await fetch('/api/site-config', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+        if (!response.ok) return;
+        const config = await response.json();
+        if (typeof config.checkoutEnabled === 'boolean' && window.FASHFORGE) {
+            window.FASHFORGE.checkoutEnabled = config.checkoutEnabled;
+            window.FASHFORGE.checkoutMode = ['test', 'live'].includes(config.checkoutMode) ? config.checkoutMode : null;
+        }
+    } catch { /* Static hosting/network failure keeps the local default (false). */ }
+}
+
+function productCartItems(catalogue, id, sizes, qty) {
+    if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new Error('Choose a quantity from 1 to 20.');
+    const products = catalogue && catalogue.products || [];
+    const outfit = (catalogue && catalogue.outfits || []).find(item => item.id === id);
+    const product = products.find(item => item.id === id);
+    const selections = outfit
+        ? (outfit.pieces || []).map(piece => ({ product: products.find(p => p.stockId === piece.stockId), size: sizes[piece.key] }))
+        : [{ product: product, size: Object.values(sizes)[0] || '' }];
+    if (!selections.length) throw new Error('This item is unavailable for checkout.');
+    return selections.map(selection => {
+        const p = selection.product;
+        if (!p || p.sellAlone !== true || p.inStock === false || (Array.isArray(p.sizes) && !p.sizes.length)) {
+            throw new Error('This item is unavailable for checkout. Please contact us on WhatsApp.');
+        }
+        if (Array.isArray(p.sizes) && !p.sizes.includes(selection.size)) throw new Error('Please select an available size for: ' + p.name);
+        return {
+            id: p.id, name: p.name, brand: p.brand || '', size: selection.size || '', qty: qty,
+            // Display only. submitStitchCheckout sends just id, size and qty.
+            price: p.price
+        };
+    });
+}
+
+function bindProductPurchase(button, catalogue, checkoutEnabled) {
+    const feedback = document.createElement('p');
+    feedback.id = 'product-purchase-feedback';
+    feedback.className = 'product-purchase-feedback';
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+    button.insertAdjacentElement('afterend', feedback);
+    const secondary = document.createElement('a');
+    secondary.className = 'product-whatsapp-secondary';
+    secondary.textContent = 'Order on WhatsApp';
+    secondary.href = 'https://wa.me/' + (window.FASHFORGE.phoneWa || '27672565980');
+    secondary.target = '_blank';
+    secondary.rel = 'noopener noreferrer';
+    secondary.hidden = !checkoutEnabled;
+    button.insertAdjacentElement('afterend', secondary);
+    if (!button.disabled) button.textContent = checkoutEnabled ? 'Add to cart' : 'Order on WhatsApp';
+    if (!checkoutEnabled) insertDeliveryChoice(button);
+
+    function selection() {
+        const sizes = {};
+        document.querySelectorAll('.product-info-col .size-group').forEach(group => {
+            const selected = group.querySelector('.size-btn.selected');
+            if (!selected) throw new Error('Please select a size for: ' + (group.dataset.label || 'this item'));
+            sizes[group.dataset.piece] = selected.dataset.size;
+        });
+        const qtyInput = document.getElementById('qty');
+        const qty = qtyInput ? Number(qtyInput.value) : 1;
+        if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new Error('Choose a quantity from 1 to 20.');
+        return { sizes, qty };
+    }
+    function whatsappUrl(chosen, requireDelivery) {
+        const delivery = document.querySelector('input[name="delivery-method"]:checked');
+        if (requireDelivery && !delivery) throw new Error('Please choose door-to-door delivery or a Courier Guy locker.');
+        const name = button.dataset.name || 'this item';
+        const size = Object.values(chosen.sizes).join(', ');
+        const message = "Hi FashForge, I'd like to order " + name + (size ? ' (size ' + size + ')' : '') +
+            '. Quantity: ' + chosen.qty + (delivery ? '. Delivery: ' + deliveryChoiceLabel(delivery.value) : '') + '.';
+        return 'https://wa.me/' + (window.FASHFORGE.phoneWa || '27672565980') + '?text=' + encodeURIComponent(message);
+    }
+    function showError(error) {
+        feedback.setAttribute('role', 'alert');
+        feedback.textContent = error.message;
+    }
+    button.addEventListener('click', function() {
+        if (button.disabled) return;
+        try {
+            const chosen = selection();
+            if (checkoutEnabled) {
+                const lines = productCartItems(catalogue, button.dataset.outfitId || button.dataset.id, chosen.sizes, chosen.qty);
+                lines.forEach(line => window.addToCart(line));
+                feedback.setAttribute('role', 'status');
+                feedback.textContent = 'Added to cart. Review your items in the cart to check out.';
+                button.classList.add('added');
+            } else {
+                window.open(whatsappUrl(chosen, true), '_blank', 'noopener,noreferrer');
+            }
+        } catch (error) { showError(error); }
+    });
+    secondary.addEventListener('click', function(event) {
+        try {
+            if (button.disabled) throw new Error('This item is currently sold out.');
+            secondary.href = whatsappUrl(selection(), false);
+        } catch (error) { event.preventDefault(); showError(error); }
+    });
+}
+// End product purchase helpers.
+
 document.addEventListener('DOMContentLoaded', async function() {
 
+    const checkoutFlagReady = loadCheckoutFlag();
     let catalogue = null;
     try {
         const response = await fetch('products.json');
@@ -295,6 +400,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     } catch (err) {
         catalogue = null;
     }
+    await checkoutFlagReady;
     if (catalogue && window.renderFashforgeCatalogue) {
         (catalogue.products || []).forEach(function(product) {
             if (product.stockId == null) return;
@@ -348,8 +454,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const buyButton = document.getElementById('add-to-cart');
     if (buyButton && !buyButton.disabled) {
-        if (activePaymentProvider() === 'disabled') {
+        if (activePaymentProvider() === 'stitch') {
             buyButton.textContent = 'Add to cart';
+        } else if (activePaymentProvider() === 'disabled') {
+            buyButton.textContent = 'Order on WhatsApp';
         } else {
             const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, buyButton) : null;
             const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
@@ -398,6 +506,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const paymentProvider = activePaymentProvider();
     const payfastOn = paymentProvider === 'payfast';
+    const stitchOn = paymentProvider === 'stitch';
+    const checkoutOn = payfastOn || stitchOn;
+    let stitchSubmitting = false;
     const ordersDisabled = paymentProvider === 'disabled';
 
     function checkoutFormHtml() {
@@ -418,6 +529,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `
             <form id="checkout-form" class="checkout-form" novalidate>
                 <h4>Delivery details</h4>
+                ${stitchOn ? (window.FASHFORGE.checkoutMode === 'test' ? '<p>Test checkout only. No orders will be fulfilled. Use test details.</p>' : '') + '<div class="form-group"><label for="checkout-delivery">Delivery in South Africa</label><select id="checkout-delivery"><option value="door">Door-to-door</option><option value="locker">Courier Guy locker</option></select></div><p>For locker delivery, enter the locker address below.</p>' : ''}
                 <div class="form-group">
                     <label for="checkout-name">Full name</label>
                     <input id="checkout-name" name="name" type="text" autocomplete="name" maxlength="100" required>
@@ -461,17 +573,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // ---- Inject cart drawer + overlay into the page ----
     document.body.insertAdjacentHTML('beforeend', `
         <div class="cart-overlay" id="cart-overlay"></div>
-        <aside class="cart-drawer${payfastOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${paymentProvider}">
+        <aside class="cart-drawer${checkoutOn ? ' is-checkout' : ''}" id="cart-drawer" data-payment-provider="${paymentProvider}">
             <div class="cart-drawer-header">
                 <h3>Your Cart</h3>
                 <button class="cart-close" id="cart-close" aria-label="Close cart">&times;</button>
             </div>
             <div class="cart-drawer-body">
                 <div class="cart-items" id="cart-items"></div>
-                ${payfastOn ? checkoutFormHtml() : ''}
+                ${checkoutOn ? checkoutFormHtml() : ''}
             </div>
             <div class="cart-drawer-footer">
-                ${payfastOn ? '<p class="cart-delivery-note">' + (window.FASHFORGE && window.FASHFORGE.freeDeliveryLine ? window.FASHFORGE.freeDeliveryLine() : 'Free delivery on orders of R2,000 or more.') + '</p>' : ''}
+                ${checkoutOn ? '<p class="cart-delivery-note">' + (window.FASHFORGE && window.FASHFORGE.freeDeliveryLine ? window.FASHFORGE.freeDeliveryLine() : 'Free delivery on orders of R2,000 or more.') + '</p>' : ''}
                 <div class="cart-total-row">
                     <span>Total</span>
                     <strong id="cart-total">R0.00</strong>
@@ -479,7 +591,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 ${ordersDisabled
                     ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout coming soon</button>'
-                    : '<button class="btn-checkout" id="checkout-btn" type="' + (payfastOn ? 'submit' : 'button') + '"' + (payfastOn ? ' form="checkout-form"' : '') + '>' + (payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
+                    : '<button class="btn-checkout" id="checkout-btn" type="' + (checkoutOn ? 'submit' : 'button') + '"' + (checkoutOn ? ' form="checkout-form"' : '') + '>' + (stitchOn ? (window.FASHFORGE.checkoutMode === 'test' ? 'Checkout (test)' : 'Checkout') : payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
         </aside>
@@ -505,6 +617,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     function saveCart() {
         localStorage.setItem(CART_KEY, JSON.stringify(cart));
     }
+    window.addEventListener('fashforge:order-paid', function() {
+        cart = [];
+        renderCart();
+    });
 
     // Turn { top: 'M', jogger: 'L', shoe: '9' } into a display string
     function formatSizes(item, plain) {
@@ -573,9 +689,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Total
         const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-        totalEl.textContent = formatRand(total);
+        const fee = stitchOn && cart.length ? stitchDeliveryFee(total) : 0;
+        totalEl.textContent = formatRand(total + fee);
+        if (stitchOn) {
+            checkoutBtn.disabled = stitchSubmitting || !cart.length || !!stitchCartProblem();
+            const note = drawer.querySelector('.cart-delivery-note');
+            if (note) note.textContent = 'Delivery: ' + formatRand(fee) + '. ' + window.FASHFORGE.freeDeliveryLine();
+        }
 
-        const blocked = soldOutCartMessage(cart);
+        const blocked = stitchOn ? stitchCartProblem() : soldOutCartMessage(cart);
         if (blocked) showCheckoutError(blocked, 'sold-out');
         else if (checkoutError && checkoutError.dataset.reason === 'sold-out') showCheckoutError('');
     }
@@ -780,6 +902,70 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    function stitchDeliveryFee(subtotal) {
+        const rules = window.FASHFORGE.delivery;
+        if (subtotal >= rules.freeFrom) return 0;
+        return fieldValue('checkout-delivery') === 'locker' ? rules.locker : rules.doorToDoor;
+    }
+
+    function stitchCartProblem() {
+        if (!catalogue || !Array.isArray(catalogue.products)) return 'The catalogue could not load. Refresh before checking out.';
+        for (const item of cart) {
+            const product = catalogue.products.find(p => p.id === item.id && p.sellAlone);
+            if (!product || product.inStock === false || (Array.isArray(product.sizes) && !product.sizes.length)) return 'An item is unavailable. Remove it from your cart.';
+            if (Array.isArray(product.sizes) && !product.sizes.includes(item.size)) return 'Choose an available size for ' + product.name + '. Remove it and add it again with a size.';
+            if (!Number.isInteger(item.qty) || item.qty < 1 || item.qty > 20) return 'Quantity must be between 1 and 20.';
+        }
+        return '';
+    }
+
+    async function submitStitchCheckout() {
+        if (stitchSubmitting || activePaymentProvider() !== 'stitch') return;
+        const problem = !cart.length ? 'Your cart is empty.' : stitchCartProblem();
+        if (problem) { showCheckoutError(problem); return; }
+        const form = document.getElementById('checkout-form');
+        if (!form.reportValidity()) return;
+        const customer = readCheckoutCustomer();
+        if (customer.name.length < 3 || customer.name.length > 40) {
+            showCheckoutError('Enter your full name (3–40 characters).'); return;
+        }
+        const invalid = validateCheckoutCustomer(customer);
+        if (invalid) { showCheckoutError(invalid); return; }
+        customer.country = 'ZA';
+        stitchSubmitting = true;
+        checkoutBtn.disabled = true;
+        checkoutBtn.textContent = 'Opening secure checkout…';
+        showCheckoutError('');
+        try {
+            const response = await fetch('/api/checkout', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    customer: customer, deliveryMethod: fieldValue('checkout-delivery'),
+                    items: cart.map(item => ({ id: item.id, size: item.size || '', qty: item.qty }))
+                })
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || 'Checkout could not be started.');
+            const target = new URL(data.redirectUrl);
+            if (target.origin !== 'https://express.stitch.money' || target.username || target.password) throw new Error('Invalid checkout link.');
+            const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * item.qty, 0);
+            if (data.amount !== Math.round((subtotal + stitchDeliveryFee(subtotal)) * 100)) throw new Error('Prices have changed. Refresh and add your items again before checking out.');
+            window.location.assign(target.href);
+        } catch (error) {
+            showCheckoutError(error.message || 'Checkout could not be started.');
+            stitchSubmitting = false;
+            checkoutBtn.disabled = false;
+            checkoutBtn.textContent = window.FASHFORGE.checkoutMode === 'test' ? 'Checkout (test)' : 'Checkout';
+        }
+    }
+
+    if (stitchOn) {
+        document.getElementById('checkout-delivery').addEventListener('change', renderCart);
+        document.getElementById('checkout-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitStitchCheckout();
+        });
+    }
     if (payfastOn) {
         document.getElementById('checkout-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -815,8 +1001,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     const addBtn = document.getElementById('add-to-cart');
-    if (addBtn) {
-        if (activePaymentProvider() !== 'disabled') insertDeliveryChoice(addBtn);
+    if (addBtn && activePaymentProvider() !== 'payfast') {
+        bindProductPurchase(addBtn, catalogue, activePaymentProvider() === 'stitch');
+    } else if (addBtn) {
+        if (!['disabled', 'stitch'].includes(activePaymentProvider())) insertDeliveryChoice(addBtn);
         const pieceLabels = {};
         addBtn.addEventListener('click', () => {
             if (addBtn.disabled || productSoldOut) return;
@@ -837,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return;
             }
 
-            if (activePaymentProvider() === 'disabled') {
+            if (['disabled', 'stitch'].includes(activePaymentProvider())) {
                 const qtyField = document.getElementById('qty');
                 const qty = qtyField ? Math.max(1, parseInt(qtyField.value, 10) || 1) : 1;
                 const sizeValues = Object.keys(sizes).map(function(key) { return sizes[key]; });

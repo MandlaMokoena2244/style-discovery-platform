@@ -63,21 +63,24 @@ Example, not a live product:
 
 Leave brand product URLs and supplier details out of the site. An empty `sizes` list means that piece is sold out. `sellAlone: false` keeps a piece inside an outfit only. After you add an entry, put the same sizes in `PIECE_STOCK` in `script.js` if that piece is sold from a hand-built page. Card checkout reads prices from `products.json` through `netlify/lib/catalogue.js`.
 
-## Card payments (PayFast)
+## Website checkout (Stitch)
 
-Ordering is paused until you change one switch. In `script.js`:
+Products and outfits use Add to cart, followed by Stitch checkout in the cart.
+The browser must receive checkoutEnabled:true from /api/site-config. False,
+invalid, missing or failed responses disable purchase buttons with the label
+Checkout temporarily unavailable. There is no WhatsApp ordering fallback.
+General WhatsApp contact links remain for questions and support.
+See [STITCH-CHECKOUT.md](STITCH-CHECKOUT.md) for environment configuration.
 
-```js
-const PAYMENT_PROVIDER = 'disabled'; // 'whatsapp' or 'payfast' when the store should take orders again
-```
+## Legacy card payments (PayFast)
 
-- `disabled` (current): the cart does not take payment. Shoppers can save pieces, and the cart says checkout is coming soon. The checkout button stays disabled. Card checkout and WhatsApp ordering stay off.
-- `whatsapp`: the cart shows Order on WhatsApp.
-- `payfast`: that button is replaced by the delivery form and Pay by card. There is no WhatsApp order button in the cart. The contact form posts to Web3Forms and does not follow this switch. WhatsApp on the contact page is for queries.
+The PayFast backend and handlers are retained but are not selected by the current
+storefront. The historical PAYMENT_PROVIDER constant does not enable ordering;
+the server-provided Stitch flag controls storefront availability.
 
 Door-to-door delivery is R99 and a Courier Guy locker is R70. Delivery is free on orders of R2,000 or more. Those amounts live in `site-config.js`. Card checkout is paused and still charges the item total from `netlify/lib/catalogue.js`, with no courier fee added on that path. When you change a selling price or an in-stock size, update that catalogue as well as the product page and `PIECE_STOCK`.
 
-PayFast order references look like `FF-261004-K7QM` (year, month, day in South Africa, then four characters). WhatsApp order references stay in the longer `FF-20260929-K7QM` form.
+PayFast order references look like `FF-261004-K7QM` (year, month, day in South Africa, then four characters).
 
 `payment-success.html` and `payment-cancelled.html` are `noindex` and are not in `sitemap.xml`.
 

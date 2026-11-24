@@ -416,8 +416,8 @@
             '<button class="qty-btn" id="qty-plus" type="button">+</button>' +
             '</div>' +
             '<button class="btn-add-cart" id="add-to-cart" type="button"' + dataOutfit + dataSingle +
-            ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">' +
-            (window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true ? 'Add to cart' : 'Order on WhatsApp') + '</button>' +
+            (window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true ? '' : ' disabled aria-disabled="true"') + ' data-id="' + escapeHtml(item.id) + '" data-name="' + escapeHtml(name) + '" data-brand="' + escapeHtml(brand) + '" data-price="' + escapeHtml(price) + '">' +
+            (window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true ? 'Add to cart' : 'Checkout temporarily unavailable') + '</button>' +
             '<p class="product-note"><a href="' + escapeHtml(back) + '">Back to ' + escapeHtml(brand || 'the collection') + '</a></p>' +
             '</div></div>';
         bindGallery(mount);

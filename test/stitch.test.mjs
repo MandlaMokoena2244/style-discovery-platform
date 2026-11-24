@@ -25,14 +25,14 @@ test('public checkout flag exposes only enabled/mode and keeps test guards', asy
 });
 
 test('server flag enables a disabled local default, overrides stale true and fails safely', async () => {
-    for (const [local, remote, expected] of [[false, true, true], [true, false, false], [false, 'invalid', false]]) {
+    for (const [local, remote, expected] of [[false, true, true], [true, false, false], [true, 'invalid', false]]) {
         const context = { window: { FASHFORGE: { checkoutEnabled: local, showOutfits: false } }, AbortSignal, fetch: async () => Response.json({ checkoutEnabled: remote }) };
         vm.runInNewContext(purchaseHelpers, context);
         await context.loadCheckoutFlag();
         assert.equal(context.window.FASHFORGE.checkoutEnabled, expected);
         assert.equal(context.window.FASHFORGE.showOutfits, false);
     }
-    const context = { window: { FASHFORGE: { checkoutEnabled: false } }, AbortSignal, fetch: async () => { throw new Error('offline'); } };
+    const context = { window: { FASHFORGE: { checkoutEnabled: true } }, AbortSignal, fetch: async () => { throw new Error('offline'); } };
     vm.runInNewContext(purchaseHelpers, context);
     await context.loadCheckoutFlag();
     assert.equal(context.window.FASHFORGE.checkoutEnabled, false);
@@ -47,6 +47,7 @@ function purchaseHarness(enabled) {
     const quantity = { value: '2' };
     const button = {
         dataset: { id: product.id, name: product.name }, disabled: false, events: {},
+        setAttribute(key, value) { this[key] = value; },
         classList: { add(value) { button.addedClass = value; } },
         insertAdjacentElement(position, element) { inserted.push(element); },
         addEventListener(name, callback) { this.events[name] = callback; }
@@ -67,10 +68,10 @@ function purchaseHarness(enabled) {
     return { context, product, button, quantity, added, opened, feedback: inserted[0], secondary: inserted[1], choose(size) { selected = { dataset: { size } }; } };
 }
 
-test('enabled product button requires size, adds canonical items/quantity and shows feedback plus secondary WhatsApp', () => {
+test('enabled product button requires size, adds canonical items/quantity and shows feedback without purchase links', () => {
     const h = purchaseHarness(true);
     assert.equal(h.button.textContent, 'Add to cart');
-    assert.equal(h.secondary.hidden, false);
+    assert.equal(h.secondary, undefined);
     h.button.events.click();
     assert.equal(h.added.length, 0);
     assert.match(h.feedback.textContent, /Please select a size/);
@@ -83,8 +84,6 @@ test('enabled product button requires size, adds canonical items/quantity and sh
     assert.match(h.feedback.textContent, /Added to cart/);
     assert.equal(h.button.addedClass, 'added');
     assert.equal(h.opened.length, 0);
-    h.secondary.events.click({ preventDefault() { assert.fail('Valid secondary link must navigate'); } });
-    assert.match(decodeURIComponent(h.secondary.href), /Quantity: 2/);
     h.quantity.value = '0';
     h.button.events.click();
     assert.equal(h.added.length, 1);
@@ -94,16 +93,15 @@ test('enabled product button requires size, adds canonical items/quantity and sh
     assert.ok(mapper);
 });
 
-test('disabled product button keeps WhatsApp primary and never adds to cart', () => {
+test('disabled product button blocks purchases without opening WhatsApp', () => {
     const h = purchaseHarness(false);
-    assert.equal(h.button.textContent, 'Order on WhatsApp');
-    assert.equal(h.secondary.hidden, true);
+    assert.equal(h.button.textContent, 'Checkout temporarily unavailable');
+    assert.equal(h.button.disabled, true);
+    assert.equal(h.secondary, undefined);
     h.choose(h.product.sizes[0]);
     h.button.events.click();
     assert.equal(h.added.length, 0);
-    assert.equal(h.opened.length, 1);
-    assert.match(h.opened[0][0], /^https:\/\/wa\.me\//);
-    assert.match(decodeURIComponent(h.opened[0][0]), /Quantity: 2/);
+    assert.equal(h.opened.length, 0);
 });
 
 test('shared outfit path uses server-accepted piece IDs and sizes, rejects unavailable pieces', () => {
@@ -708,5 +706,15 @@ test('live return page accepts live references and shows no test wording', async
         const context = { window: { FASHFORGE: { checkoutEnabled: false } }, AbortSignal, fetch: async () => Response.json({ checkoutEnabled: true, checkoutMode: mode }) };
         vm.runInNewContext(purchaseHelpers, context); await context.loadCheckoutFlag();
         assert.equal(context.window.FASHFORGE.checkoutMode, mode);
+    }
+});
+
+test('failed capability responses cannot retain stale enabled checkout', async () => {
+    for (const response of [Response.json({}, { status: 503 }), Response.json({}), new Response('not JSON')]) {
+        const context = { window: { FASHFORGE: { checkoutEnabled: true, checkoutMode: 'live' } }, AbortSignal, fetch: async () => response };
+        vm.runInNewContext(purchaseHelpers, context);
+        await context.loadCheckoutFlag();
+        assert.equal(context.window.FASHFORGE.checkoutEnabled, false);
+        assert.equal(context.window.FASHFORGE.checkoutMode, null);
     }
 });

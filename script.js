@@ -49,30 +49,6 @@ function applySiteDetails() {
     }
 }
 
-function deliveryChoiceLabel(value) {
-    const delivery = window.FASHFORGE && window.FASHFORGE.delivery;
-    if (value === 'locker') {
-        const provider = delivery && delivery.lockerProvider ? delivery.lockerProvider : 'Courier Guy';
-        return provider + ' locker';
-    }
-    return 'door-to-door';
-}
-
-function insertDeliveryChoice(button) {
-    if (!button || document.getElementById('delivery-choice') || !window.FASHFORGE || !window.FASHFORGE.delivery) return;
-    const delivery = window.FASHFORGE.delivery;
-    const zar = window.FASHFORGE.formatZar;
-    const field = document.createElement('fieldset');
-    field.className = 'delivery-choice';
-    field.id = 'delivery-choice';
-    field.innerHTML =
-        '<legend>Delivery</legend>' +
-        '<label><input type="radio" name="delivery-method" value="door"> Door-to-door, ' + zar(delivery.doorToDoor) + '</label>' +
-        '<label><input type="radio" name="delivery-method" value="locker"> ' + delivery.lockerProvider + ' locker, ' + zar(delivery.locker) + '. Collect with a PIN within ' + delivery.lockerHours + ' hours.</label>' +
-        '<p>' + window.FASHFORGE.freeDeliveryLine() + ' ' + window.FASHFORGE.deliveryWindowLine() + '</p>';
-    button.insertAdjacentElement('beforebegin', field);
-}
-
 function ensureSiteNav() {
     var navbar = document.querySelector('.navbar');
     if (!navbar) return;
@@ -215,26 +191,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // old block first (from its header comment to the end of file)
 // ============================================
 // ============================================
-// PAYMENT SWITCH
-// One place to turn ordering back on.
-// 'disabled' shows a notice and does not take orders. Add to cart still works.
-// 'whatsapp' keeps Order on WhatsApp.
-// 'payfast' replaces that button with the card checkout form.
-// There is no WhatsApp order button while this is 'payfast' or 'disabled'.
-// The contact form posts to Web3Forms and does not follow this switch.
-// WhatsApp on the contact page is for queries only.
-// ============================================
+// Checkout is enabled only by the server flag. WhatsApp contact is for questions.
+// Legacy PayFast handlers are retained separately; storefront purchases use Stitch.
 const PAYMENT_PROVIDER = 'disabled';
-const ORDERS_PAUSED_NOTICE = "We're not taking payments yet. Online checkout is coming soon — you can save items in your cart and check back shortly.";
+const ORDERS_PAUSED_NOTICE = 'Checkout temporarily unavailable. Please try again later.';
 
 function activePaymentProvider() {
     if (typeof window !== 'undefined' && window.FASHFORGE && window.FASHFORGE.checkoutEnabled === true) return 'stitch';
-    if (PAYMENT_PROVIDER === 'payfast') return 'payfast';
-    if (PAYMENT_PROVIDER === 'disabled') return 'disabled';
-    if (PAYMENT_PROVIDER !== 'whatsapp') {
-        console.warn('PAYMENT_PROVIDER must be disabled, whatsapp, or payfast. Staying on WhatsApp.');
-    }
-    return 'whatsapp';
+    return 'disabled';
 }
 
 // In-stock sizes only, keyed by piece id. Keep this in step with products.json.
@@ -289,6 +253,11 @@ function soldOutCartMessage(items) {
 
 // Product purchase helpers. Shared by the catalogue's product and outfit template.
 async function loadCheckoutFlag() {
+    // Fail closed even if an old local flag or a previous response enabled checkout.
+    if (window.FASHFORGE) {
+        window.FASHFORGE.checkoutEnabled = false;
+        window.FASHFORGE.checkoutMode = null;
+    }
     try {
         const response = await fetch('/api/site-config', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
         if (!response.ok) return;
@@ -297,7 +266,7 @@ async function loadCheckoutFlag() {
             window.FASHFORGE.checkoutEnabled = config.checkoutEnabled;
             window.FASHFORGE.checkoutMode = ['test', 'live'].includes(config.checkoutMode) ? config.checkoutMode : null;
         }
-    } catch { /* Static hosting/network failure keeps the local default (false). */ }
+    } catch { /* Static hosting/network failure keeps checkout disabled. */ }
 }
 
 function productCartItems(catalogue, id, sizes, qty) {
@@ -312,7 +281,7 @@ function productCartItems(catalogue, id, sizes, qty) {
     return selections.map(selection => {
         const p = selection.product;
         if (!p || p.sellAlone !== true || p.inStock === false || (Array.isArray(p.sizes) && !p.sizes.length)) {
-            throw new Error('This item is unavailable for checkout. Please contact us on WhatsApp.');
+            throw new Error('This item is unavailable for checkout.');
         }
         if (Array.isArray(p.sizes) && !p.sizes.includes(selection.size)) throw new Error('Please select an available size for: ' + p.name);
         return {
@@ -330,16 +299,11 @@ function bindProductPurchase(button, catalogue, checkoutEnabled) {
     feedback.setAttribute('role', 'status');
     feedback.setAttribute('aria-live', 'polite');
     button.insertAdjacentElement('afterend', feedback);
-    const secondary = document.createElement('a');
-    secondary.className = 'product-whatsapp-secondary';
-    secondary.textContent = 'Order on WhatsApp';
-    secondary.href = 'https://wa.me/' + (window.FASHFORGE.phoneWa || '27672565980');
-    secondary.target = '_blank';
-    secondary.rel = 'noopener noreferrer';
-    secondary.hidden = !checkoutEnabled;
-    button.insertAdjacentElement('afterend', secondary);
-    if (!button.disabled) button.textContent = checkoutEnabled ? 'Add to cart' : 'Order on WhatsApp';
-    if (!checkoutEnabled) insertDeliveryChoice(button);
+    if (!checkoutEnabled) {
+        button.disabled = true;
+        button.textContent = 'Checkout temporarily unavailable';
+        button.setAttribute('aria-disabled', 'true');
+    } else if (!button.disabled) button.textContent = 'Add to cart';
 
     function selection() {
         const sizes = {};
@@ -352,15 +316,6 @@ function bindProductPurchase(button, catalogue, checkoutEnabled) {
         const qty = qtyInput ? Number(qtyInput.value) : 1;
         if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new Error('Choose a quantity from 1 to 20.');
         return { sizes, qty };
-    }
-    function whatsappUrl(chosen, requireDelivery) {
-        const delivery = document.querySelector('input[name="delivery-method"]:checked');
-        if (requireDelivery && !delivery) throw new Error('Please choose door-to-door delivery or a Courier Guy locker.');
-        const name = button.dataset.name || 'this item';
-        const size = Object.values(chosen.sizes).join(', ');
-        const message = "Hi FashForge, I'd like to order " + name + (size ? ' (size ' + size + ')' : '') +
-            '. Quantity: ' + chosen.qty + (delivery ? '. Delivery: ' + deliveryChoiceLabel(delivery.value) : '') + '.';
-        return 'https://wa.me/' + (window.FASHFORGE.phoneWa || '27672565980') + '?text=' + encodeURIComponent(message);
     }
     function showError(error) {
         feedback.setAttribute('role', 'alert');
@@ -376,17 +331,10 @@ function bindProductPurchase(button, catalogue, checkoutEnabled) {
                 feedback.setAttribute('role', 'status');
                 feedback.textContent = 'Added to cart. Review your items in the cart to check out.';
                 button.classList.add('added');
-            } else {
-                window.open(whatsappUrl(chosen, true), '_blank', 'noopener,noreferrer');
             }
         } catch (error) { showError(error); }
     });
-    secondary.addEventListener('click', function(event) {
-        try {
-            if (button.disabled) throw new Error('This item is currently sold out.');
-            secondary.href = whatsappUrl(selection(), false);
-        } catch (error) { event.preventDefault(); showError(error); }
-    });
+
 }
 // End product purchase helpers.
 
@@ -452,19 +400,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    const buyButton = document.getElementById('add-to-cart');
-    if (buyButton && !buyButton.disabled) {
-        if (activePaymentProvider() === 'stitch') {
-            buyButton.textContent = 'Add to cart';
-        } else if (activePaymentProvider() === 'disabled') {
-            buyButton.textContent = 'Order on WhatsApp';
-        } else {
-            const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, buyButton) : null;
-            const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
-            buyButton.textContent = paymentLink ? 'Buy' : 'Order on WhatsApp';
-        }
-    }
-
     function placeSoldOutBadge(card) {
         if (card.querySelector(':scope > .sold-out-badge')) return;
         card.insertAdjacentHTML('afterbegin', '<span class="sold-out-badge">Sold out</span>');
@@ -483,15 +418,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const CART_KEY = 'fashforge_cart';
     let cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
 
-    // Outfit ID format: FF-<M|W|K>-<NNN> (M men, W women, K kids), e.g. FF-M-001.
-    // Set data-outfit-id on the product's Add to Cart button. The next free number
-    // in that department is the next ID. The catalogue is empty, so FF-M-001 is free.
-    // Brand product URLs and supplier details stay in a private Google Sheet keyed
-    // by this ID — do not put them in the site. Cart lines with no outfit id
-    // (or an older non-FF id) still check out; the id is left off that line.
-    const OUTFIT_ID_RE = /^FF-[MWK]-\d{3}$/;
-
-    // Short labels for the cart and the WhatsApp line. Men's keys stay as they are.
+    // Short labels for legacy cart sizes.
     const PIECE_LABELS = {
         top: 'Top',
         jogger: 'Jogger',
@@ -590,8 +517,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 ${ordersDisabled
-                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout coming soon</button>'
-                    : '<button class="btn-checkout" id="checkout-btn" type="' + (checkoutOn ? 'submit' : 'button') + '"' + (checkoutOn ? ' form="checkout-form"' : '') + '>' + (stitchOn ? (window.FASHFORGE.checkoutMode === 'test' ? 'Checkout (test)' : 'Checkout') : payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
+                    ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout temporarily unavailable</button>'
+                    : '<button class="btn-checkout" id="checkout-btn" type="' + (checkoutOn ? 'submit' : 'button') + '"' + (checkoutOn ? ' form="checkout-form"' : '') + '>' + (stitchOn ? (window.FASHFORGE.checkoutMode === 'test' ? 'Checkout (test)' : 'Checkout') : payfastOn ? 'Pay by card' : 'Checkout temporarily unavailable') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
         </aside>
@@ -630,34 +557,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             return plain ? parts.join(', ') : parts.join(' &middot; ');
         }
         return item.size || ''; // old cart items (backwards compatible)
-    }
-
-    function outfitIdOf(item) {
-        if (!item || typeof item.id !== 'string') return '';
-        return OUTFIT_ID_RE.test(item.id) ? item.id : '';
-    }
-
-    function orderLine(item) {
-        const label = item.brand ? (item.brand + ' — ' + item.name) : item.name;
-        const sizes = formatSizes(item, true);
-        const sizePart = sizes ? ' (' + sizes + ')' : '';
-        const id = outfitIdOf(item);
-        const prefix = id ? (id + ' — ') : '';
-        return prefix + label + sizePart + ' — Qty: ' + item.qty + ' — ' + formatRand(item.price * item.qty);
-    }
-
-    // One reference per checkout, e.g. Order ref: FF-20260929-K7QM
-    function makeOrderRef() {
-        const now = new Date();
-        const date = String(now.getFullYear())
-            + String(now.getMonth() + 1).padStart(2, '0')
-            + String(now.getDate()).padStart(2, '0');
-        const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        let code = '';
-        for (let i = 0; i < 4; i++) {
-            code += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-        }
-        return 'FF-' + date + '-' + code;
     }
 
     function renderCart() {
@@ -742,36 +641,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             renderCart();
         }
     });
-
-    function checkoutOnWhatsApp() {
-        if (activePaymentProvider() !== 'whatsapp') return;
-        if (cart.length === 0) {
-            alert('Your cart is empty.');
-            return;
-        }
-        const blocked = soldOutCartMessage(cart);
-        if (blocked) {
-            showCheckoutError(blocked, 'sold-out');
-            return;
-        }
-        const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-        const message = "Hi FashForge, I'd like to order:\n" +
-            'Order ref: ' + makeOrderRef() + '\n' +
-            cart.map(orderLine).join('\n') +
-            '\nTotal: ' + formatRand(total);
-        const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
-        console.log('WhatsApp checkout URL:', url);
-        const opened = window.open(url, '_blank');
-        if (!opened) {
-            alert('Allow pop-ups to open WhatsApp and place your order.');
-            return;
-        }
-        try { opened.opener = null; } catch (err) { /* already opened */ }
-        cart = [];
-        saveCart();
-        renderCart();
-        closeCart();
-    }
 
     function fieldValue(id) {
         const el = document.getElementById(id);
@@ -971,9 +840,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             e.preventDefault();
             submitPayfastCheckout();
         });
-    } else if (checkoutBtn && activePaymentProvider() === 'whatsapp') {
-        // Checkout -> WhatsApp order. Cart is cleared only after WhatsApp opens.
-        checkoutBtn.addEventListener('click', checkoutOnWhatsApp);
     }
 
     renderCart();
@@ -1001,76 +867,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     const addBtn = document.getElementById('add-to-cart');
-    if (addBtn && activePaymentProvider() !== 'payfast') {
-        bindProductPurchase(addBtn, catalogue, activePaymentProvider() === 'stitch');
-    } else if (addBtn) {
-        if (!['disabled', 'stitch'].includes(activePaymentProvider())) insertDeliveryChoice(addBtn);
-        const pieceLabels = {};
-        addBtn.addEventListener('click', () => {
-            if (addBtn.disabled || productSoldOut) return;
-            // Collect the chosen size from EACH piece group
-            const sizes = {};
-            let missing = null;
-            document.querySelectorAll('.size-group').forEach(group => {
-                const selected = group.querySelector('.size-btn.selected');
-                if (selected) {
-                    sizes[group.dataset.piece] = selected.dataset.size;
-                } else if (!missing) {
-                    missing = group.dataset.label || pieceLabels[group.dataset.piece] || 'this piece';
-                }
-            });
-
-            if (missing) {
-                alert('Please select a size for: ' + missing);
-                return;
-            }
-
-            if (['disabled', 'stitch'].includes(activePaymentProvider())) {
-                const qtyField = document.getElementById('qty');
-                const qty = qtyField ? Math.max(1, parseInt(qtyField.value, 10) || 1) : 1;
-                const sizeValues = Object.keys(sizes).map(function(key) { return sizes[key]; });
-                window.addToCart({
-                    id: addBtn.dataset.outfitId || addBtn.dataset.id || '',
-                    name: addBtn.dataset.name || 'this piece',
-                    brand: addBtn.dataset.brand || '',
-                    price: Number(addBtn.dataset.price) || 0,
-                    qty: qty,
-                    sizes: sizes,
-                    size: sizeValues.join(', ')
-                });
-                return;
-            }
-
-            const sellable = window.lookupFashforgeSellable ? window.lookupFashforgeSellable(catalogue, addBtn) : null;
-            const paymentLink = sellable && typeof sellable.paymentLink === 'string' ? sellable.paymentLink.trim() : '';
-            // TODO(Mandla): a Stitch Express paymentLink does not receive the chosen size yet.
-            if (paymentLink) {
-                window.location.assign(paymentLink);
-                return;
-            }
-
-            const deliveryChoice = document.querySelector('input[name="delivery-method"]:checked');
-            if (!deliveryChoice) {
-                alert('Please choose door-to-door delivery or a Courier Guy locker.');
-                return;
-            }
-
-            const parts = [];
-            document.querySelectorAll('.size-group').forEach(group => {
-                const selected = group.querySelector('.size-btn.selected');
-                if (!selected) return;
-                const label = PIECE_LABELS[group.dataset.piece] || group.dataset.label || 'Size';
-                parts.push(label + ' ' + selected.dataset.size);
-            });
-            const name = addBtn.dataset.name || 'this piece';
-            const sizeText = parts.join(', ');
-            const message = "Hi FashForge, I'd like to order " + name + (sizeText ? ' (' + sizeText + ')' : '') + '. Delivery: ' + deliveryChoiceLabel(deliveryChoice.value) + '.';
-            const url = 'https://wa.me/27672565980?text=' + encodeURIComponent(message);
-            const opened = window.open(url, '_blank', 'noopener');
-            if (!opened) {
-                alert('Allow pop-ups to open WhatsApp, or message us on +27 67 256 5980.');
-            }
-        });
-    }
+    if (addBtn) bindProductPurchase(addBtn, catalogue, activePaymentProvider() === 'stitch');
 
 });

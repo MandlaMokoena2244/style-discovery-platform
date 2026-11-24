@@ -19,7 +19,7 @@ Live order operations also require all these services to be configured.
 GET /api/site-config returns only checkoutEnabled and checkoutMode (test/live,
 or null when disabled), with Cache-Control:no-store. The browser resolves it
 before initializing product buttons and the cart. A valid server response overrides
-the local flag. A failed request retains the local default false. The public mode
+the local flag. A failed or invalid request disables checkout even if the local flag was previously true. The public mode
 only controls wording; no request-body or URL field can choose payment mode.
 
 CHECKOUT_ENABLED gates new checkout creation only. Keep credentials, webhook secret
@@ -162,7 +162,7 @@ retry payloads. Do not replay an old ambiguous send with a new key.
 
 1. Configure test Preview variables and its dedicated ORDERS namespace; redeploy.
 2. Confirm /api/site-config returns enabled true and checkoutMode test. Choose a
-   product size/quantity; check cart count/feedback and the secondary WhatsApp link.
+   product size/quantity; check cart count/feedback. Purchases use Stitch only; WhatsApp links are for support.
 3. Use test customer addresses you control. Confirm authoritative prices/delivery.
 4. Complete only the documented Express test-card flow. Confirm a pending record
    becomes paid, one owner/customer email arrives, and the return page clears cart.
@@ -219,3 +219,13 @@ KV propagation can delay the return page; failed email retries must be monitored
 - https://resend.com/docs/api-reference/emails/send-email
 - https://resend.com/docs/dashboard/emails/idempotency-keys
 - https://developers.cloudflare.com/kv/concepts/how-kv-works/
+
+## Website-only purchases
+
+Product and outfit pages use Add to cart and the cart uses Stitch Checkout.
+There is no WhatsApp ordering fallback or order-message builder. When the server
+flag is false, invalid or unreachable, purchase buttons are disabled and read
+Checkout temporarily unavailable. Existing saved cart items remain. General
+WhatsApp contact links on the footer/contact page and order-email help links remain.
+Mobile card alternate images are always positioned over the first photo and hidden;
+only hover-capable screens at least 801px wide reveal the second photo.

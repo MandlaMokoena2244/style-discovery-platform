@@ -1,0 +1,42 @@
+# Publish beside index.html. Pages applies these rules only to static responses;
+# Functions (including /api/*) retain their own response headers.
+# Default includes /, *.html, and extension-less pretty URLs such as /product.
+/*
+  Cache-Control: no-cache
+
+# Detach the broader value first: matching headers otherwise combine in Pages.
+/images/*
+  ! Cache-Control
+  Cache-Control: public, max-age=604800
+
+/*.css
+  ! Cache-Control
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.js
+  ! Cache-Control
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.png
+  ! Cache-Control
+  Cache-Control: public, max-age=604800
+
+/*.jpg
+  ! Cache-Control
+  Cache-Control: public, max-age=604800
+
+/*.jpeg
+  ! Cache-Control
+  Cache-Control: public, max-age=604800
+
+/*.webp
+  ! Cache-Control
+  Cache-Control: public, max-age=604800
+
+/*.svg
+  ! Cache-Control
+  Cache-Control: public, max-age=604800
+
+/*.ico
+  ! Cache-Control
+  Cache-Control: public, max-age=604800

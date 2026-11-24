@@ -7,7 +7,7 @@
     const refresh = document.getElementById('order-refresh');
     const params = new URLSearchParams(window.location.search);
     const reference = params.get('ref') || params.get('reference');
-    const referencePattern = /^FF-TEST-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    const referencePattern = /^FF-(?:TEST-)?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
     const delays = [2000, 4000, 8000, 12000, 20000, 30000, 30000];
     let attempts = 0;
     let running = false;

@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { createHmac, randomBytes } from 'node:crypto';
 import { registerHooks } from 'node:module';
+import { requireCheckoutConfig } from '../lib/stitch-config.mjs';
 import { onRequest as siteConfig } from '../functions/api/site-config.js';
 
 const catalogueUrl = new URL('../products.json', import.meta.url);
@@ -11,14 +12,14 @@ const catalogue = JSON.parse(readFileSync(catalogueUrl, 'utf8'));
 const purchaseScript = readFileSync(new URL('../script.js', import.meta.url), 'utf8');
 const purchaseHelpers = purchaseScript.slice(purchaseScript.indexOf('// Product purchase helpers.'), purchaseScript.indexOf('// End product purchase helpers.'));
 
-test('public checkout flag exposes only a boolean and keeps test guards', async () => {
+test('public checkout flag exposes only enabled/mode and keeps test guards', async () => {
     const request = new Request('https://preview.example.com/api/site-config');
-    const config = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-fixture', STITCH_CLIENT_SECRET: 'opaque-fixture', RESEND_API_KEY: 'private-fixture' };
+    const config = { STITCH_SITE_URL: 'https://preview.example.com', STITCH_WEBHOOK_SECRET: 'c2lnbmluZy1maXh0dXJl', ORDERS: { get() {}, put() {} }, CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-fixture', STITCH_CLIENT_SECRET: 'opaque-fixture', RESEND_API_KEY: 'private-fixture' };
     const response = siteConfig({ request, env: config });
-    assert.deepEqual(await response.json(), { checkoutEnabled: true });
+    assert.deepEqual(await response.json(), { checkoutEnabled: true, checkoutMode: 'test' });
     assert.equal(response.headers.get('Cache-Control'), 'no-store');
     for (const change of [{ CHECKOUT_ENABLED: 'false' }, { CHECKOUT_ENABLED: undefined }, { STITCH_MODE: 'live' }, { STITCH_CLIENT_ID: 'live-fixture' }, { STITCH_CLIENT_SECRET: '' }]) {
-        assert.deepEqual(await siteConfig({ request, env: { ...config, ...change } }).json(), { checkoutEnabled: false });
+        assert.deepEqual(await siteConfig({ request, env: { ...config, ...change } }).json(), { checkoutEnabled: false, checkoutMode: null });
     }
     assert.equal(siteConfig({ request: new Request(request.url, { method: 'POST' }), env: config }).status, 405);
 });
@@ -125,11 +126,13 @@ const catalogueLoader = registerHooks({
         return nextLoad(url, context);
     }
 });
+let readOrder, referenceMode;
 let customerEmail, enrichItems, emailMoney, emailDate, firstName, escapeHtml;
-let priceCart, validateCustomer, delivery, requireTestConfig, checkout, webhook, verifyWebhook, orderStatus;
+let priceCart, validateCustomer, delivery, requireStitchConfig, checkout, webhook, verifyWebhook, orderStatus;
 try {
+    ({ readOrder, referenceMode } = await import('../lib/orders.mjs'));
     ({ customerEmail, enrichItems, emailMoney, emailDate, firstName, escapeHtml } = await import('../lib/order-email.mjs'));
-    ({ priceCart, validateCustomer, delivery, requireTestConfig } = await import('../lib/stitch-checkout.mjs'));
+    ({ priceCart, validateCustomer, delivery, requireStitchConfig } = await import('../lib/stitch-checkout.mjs'));
     ({ onRequest: checkout } = await import('../functions/api/checkout.js'));
     ({ onRequest: webhook, verifyWebhook } = await import('../functions/api/stitch-webhook.js'));
     ({ onRequest: orderStatus } = await import('../functions/api/order-status.js'));
@@ -201,21 +204,23 @@ test('email test banner, free locker delivery and one-size fallback', () => {
     assert.ok(!live.text.includes('Test order — no items will be dispatched'));
 });
 async function orderFixture(run, overrides = {}) {
+    const fixtureMode = overrides.STITCH_MODE || 'test';
+    const fixtureReference = fixtureMode === 'live' ? orderRef.replace('FF-TEST-', 'FF-') : orderRef;
     const key = randomBytes(32);
     const orders = new MemoryKV();
     const totals = priceCart([item], 'door');
     const order = {
-        reference: orderRef, mode: 'test', status: 'pending', paymentLinkId: 'order-link',
+        reference: fixtureReference, mode: fixtureMode, status: 'pending', paymentLinkId: 'order-link',
         customer: validateCustomer({ ...customer, note: 'At the gate' }), deliveryMethod: 'door',
         ...totals, currency: 'ZAR', createdAt: new Date().toISOString()
     };
-    await orders.put(orderRef, JSON.stringify(order));
+    await orders.put(fixtureReference, JSON.stringify(order));
     const config = {
         ...env, ORDERS: orders, STITCH_WEBHOOK_SECRET: key.toString('base64'),
         RESEND_API_KEY: 'mock-resend-key', ORDER_NOTIFY_EMAIL: 'owner@example.com',
         ORDER_FROM_EMAIL: 'shop@example.com', ...overrides
     };
-    const link = { id: order.paymentLinkId, merchantReference: orderRef, amount: order.total, status: 'PAID', paymentId: 'payment-1', paidAt: new Date().toISOString() };
+    const link = { id: order.paymentLinkId, merchantReference: fixtureReference, amount: order.total, status: 'PAID', paymentId: 'payment-1', paidAt: new Date().toISOString() };
     const attempts = [];
     const sent = new Map();
     const control = { failCustomerOnce: false, linkReads: 0 };
@@ -251,7 +256,7 @@ async function orderFixture(run, overrides = {}) {
             headers: { 'svix-id': id, 'svix-timestamp': timestamp, 'svix-signature': 'v1,' + signature }
         });
     }
-    const statusRequest = () => new Request('https://preview.example.com/api/order-status?ref=' + orderRef);
+    const statusRequest = () => new Request('https://preview.example.com/api/order-status?ref=' + fixtureReference);
     try { await run({ config, orders, order, link, attempts, sent, control, event, statusRequest }); }
     finally { globalThis.fetch = originalFetch; }
 }
@@ -464,7 +469,7 @@ class MemoryKV {
     }
     async put(key, value) { this.values.set(key, value); }
 }
-const env = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-placeholder', STITCH_CLIENT_SECRET: 'opaque-placeholder', STITCH_SITE_URL: 'https://preview.example.com', ORDERS: new MemoryKV() };
+const env = { CHECKOUT_ENABLED: 'true', STITCH_MODE: 'test', STITCH_CLIENT_ID: 'test-placeholder', STITCH_CLIENT_SECRET: 'opaque-placeholder', STITCH_SITE_URL: 'https://preview.example.com', STITCH_WEBHOOK_SECRET: 'c2lnbmluZy1maXh0dXJl', ORDERS: new MemoryKV() };
 function request(body, options = {}) {
     return new Request('https://preview.example.com/api/checkout', {
         method: 'POST', headers: { Origin: 'https://preview.example.com', 'Content-Type': 'application/json', ...options.headers },
@@ -494,12 +499,12 @@ test('empty, unknown, missing size, invalid quantity and duplicate quantity bypa
 test('customer validation and live credentials fail closed', () => {
     assert.equal(validateCustomer(customer).mobile, '+27820000000');
     for (const change of [{ country: 'US' }, { name: 'A' }, { email: 'bad' }, { mobile: '123' }, { province: 'Unknown' }, { postalCode: '123' }]) assert.throws(() => validateCustomer({ ...customer, ...change }));
-    assert.throws(() => requireTestConfig({ ...env, STITCH_MODE: 'live' }));
-    assert.throws(() => requireTestConfig({ ...env, STITCH_CLIENT_ID: 'live-placeholder' }));
-    assert.doesNotThrow(() => requireTestConfig(env));
-    assert.doesNotThrow(() => requireTestConfig({ ...env, STITCH_CLIENT_SECRET: 'test-placeholder' }));
+    assert.throws(() => requireStitchConfig({ ...env, STITCH_MODE: 'live' }));
+    assert.throws(() => requireStitchConfig({ ...env, STITCH_CLIENT_ID: 'live-placeholder' }));
+    assert.doesNotThrow(() => requireStitchConfig(env));
+    assert.doesNotThrow(() => requireStitchConfig({ ...env, STITCH_CLIENT_SECRET: 'test-placeholder' }));
     for (const secret of [undefined, null, '', '   ', 123]) {
-        assert.throws(() => requireTestConfig({ ...env, STITCH_CLIENT_SECRET: secret }));
+        assert.throws(() => requireStitchConfig({ ...env, STITCH_CLIENT_SECRET: secret }));
     }
 });
 test('browser flag selects Stitch and return pages preserve the cart without claiming payment', () => {
@@ -588,3 +593,120 @@ test('webhook raw-body HMAC, rotations, timestamps, retries and tampering: ' + (
     assert.equal((await webhook({ request: new Request('https://preview.example.com/api/stitch-webhook', { method: 'POST', headers, body: raw + ' ' }), env: { STITCH_MODE: 'test', STITCH_WEBHOOK_SECRET: secret } })).status, 400);
 });
 }
+
+const liveEnv = () => ({ ...env, STITCH_MODE: 'live', STITCH_CLIENT_ID: 'live-fixture', STITCH_SITE_URL: 'https://www.fashforge.co.za', ORDERS: new MemoryKV() });
+test('complete live config enables checkout; incomplete and mismatched modes fail closed', async () => {
+    const live = liveEnv();
+    assert.equal(requireStitchConfig(live), 'live');
+    assert.equal(requireCheckoutConfig(live), 'live');
+    assert.doesNotThrow(() => requireStitchConfig({ ...live, CHECKOUT_ENABLED: 'false' }));
+    const req = new Request('https://www.fashforge.co.za/api/site-config');
+    assert.deepEqual(await siteConfig({ request: req, env: live }).json(), { checkoutEnabled: true, checkoutMode: 'live' });
+    const invalid = [{ STITCH_MODE: undefined }, { STITCH_MODE: '' }, { STITCH_MODE: 'LIVE' }, { STITCH_CLIENT_ID: 'test-fixture' }, { STITCH_CLIENT_ID: '' }, { STITCH_CLIENT_ID: 123 }, { STITCH_CLIENT_ID: ' test-fixture' }, { STITCH_CLIENT_SECRET: undefined }, { STITCH_CLIENT_SECRET: ' ' }, { STITCH_WEBHOOK_SECRET: undefined }, { STITCH_WEBHOOK_SECRET: 'not-base64!' }, { ORDERS: undefined }, { ORDERS: { get: true, put: true } }, { STITCH_SITE_URL: undefined }, { STITCH_SITE_URL: 'http://www.fashforge.co.za' }, { STITCH_SITE_URL: 'https://example.com/path' }, { STITCH_SITE_URL: 'https://user:pass@example.com' }, { CHECKOUT_ENABLED: 'false' }];
+    for (const change of invalid) {
+        const config = { ...live, ...change };
+        assert.throws(() => requireCheckoutConfig(config), { status: 503 });
+        assert.deepEqual(await siteConfig({ request: req, env: config }).json(), { checkoutEnabled: false, checkoutMode: null });
+        assert.equal((await checkout({ request: request({ customer, items: [item], deliveryMethod: 'door' }), env: config })).status, 503);
+    }
+    assert.doesNotThrow(() => requireCheckoutConfig({ ...live, STITCH_SITE_URL: 'https://another.example', STITCH_WEBHOOK_SECRET: 'whsec_' + live.STITCH_WEBHOOK_SECRET }));
+});
+test('checkout selects mode only from env, generates unique matching references and uses Express live contract', async () => {
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options) => {
+        calls.push({ url, body: JSON.parse(options.body) });
+        return Response.json({ success: true, data: url.endsWith('/token') ? { accessToken: 'mode-fixture-token' } : { payment: { id: 'mode-link', link: 'https://express.stitch.money/mode-link' } } });
+    };
+    try {
+        const refs = new Set();
+        for (const mode of ['live', 'test']) {
+            const config = { ...(mode === 'live' ? liveEnv() : env), STITCH_CLIENT_ID: mode === 'test' ? 'test-mode-contract' : 'live-mode-contract' };
+            for (let i = 0; i < 2; i++) {
+                const response = await checkout({ request: request({ customer, items: [item], deliveryMethod: 'door', mode: mode === 'live' ? 'test' : 'live', reference: 'forged' }), env: config });
+                assert.equal(response.status, 200);
+                const data = await response.json(); refs.add(data.reference);
+                assert.equal(referenceMode(data.reference), mode);
+                const stored = await config.ORDERS.get(data.reference, 'json');
+                assert.equal(stored.mode, mode);
+                assert.equal(stored.total, priceCart([item], 'door').total);
+                assert.equal(new URL(new URL(data.redirectUrl).searchParams.get('redirect_url')).searchParams.get('ref'), data.reference);
+            }
+        }
+        assert.equal(refs.size, 4);
+        const tokens = calls.filter(c => c.url.endsWith('/token'));
+        assert.equal(tokens.length, 2);
+        for (const call of tokens) { assert.equal(call.url, 'https://express.stitch.money/api/v1/token'); assert.equal(call.body.scope, 'client_paymentrequest'); }
+        assert.ok(calls.filter(c => !c.url.endsWith('/token')).every(c => c.url === 'https://express.stitch.money/api/v1/payment-links'));
+        assert.equal(referenceMode('FF-not-a-uuid'), null);
+    } finally { globalThis.fetch = originalFetch; }
+});
+for (const mode of ['test', 'live']) {
+    test(mode + ' webhook reconciles and retries mode-specific emails with identical bodies', async () => {
+        await orderFixture(async ({ config, orders, order, attempts, sent, event, control, statusRequest }) => {
+            control.failCustomerOnce = true;
+            // Turning off new checkouts must not strand an existing paid order.
+            config.CHECKOUT_ENABLED = 'false';
+            assert.equal((await webhook({ request: event(), env: config })).status, 503);
+            assert.equal((await webhook({ request: event(), env: config })).status, 200);
+            assert.equal(sent.size, 2);
+            assert.equal((await orders.get(order.reference, 'json')).status, 'paid');
+            const customerAttempts = attempts.filter(a => a.body.to[0] === customer.email);
+            assert.deepEqual(customerAttempts[0].body, customerAttempts[1].body);
+            for (const attempt of attempts) assert.ok(attempt.idempotencyKey.startsWith((mode === 'test' ? 'test-order-paid/' : 'order-paid/') + order.reference + '/'));
+            const owner = attempts[0].body;
+            const recipient = customerAttempts[0].body;
+            if (mode === 'live') {
+                assert.match(owner.subject, /^New paid order FF-/);
+                assert.ok(!owner.text.includes('TEST ORDER'));
+                assert.ok(!owner.subject.includes('[TEST]'));
+                assert.equal(recipient.subject, 'Your FashForge order is confirmed');
+                assert.ok(!recipient.html.includes('Test order'));
+                assert.ok(!recipient.text.includes('Test order'));
+            } else {
+                assert.ok(owner.subject.startsWith('[TEST]'));
+                assert.ok(owner.text.includes('TEST ORDER'));
+                assert.ok(recipient.html.includes('Test order'));
+            }
+            assert.equal((await webhook({ request: event(), env: config })).status, 200);
+            assert.equal(attempts.length, 3);
+            assert.equal((await (await orderStatus({ request: statusRequest(), env: config })).json()).status, 'paid');
+            assert.equal((await webhook({ request: event('wrong-secret'), env: { ...config, STITCH_WEBHOOK_SECRET: randomBytes(32).toString('base64') } })).status, 400);
+        }, { STITCH_MODE: mode, STITCH_CLIENT_ID: mode === 'test' ? 'test-webhook-mode' : 'live-webhook-mode' });
+    });
+    test(mode + ' endpoint rejects opposite-mode and prefix-mismatched stored orders', async () => {
+        await orderFixture(async ({ config, orders, order, link, event, attempts }) => {
+            const other = mode === 'test' ? 'live' : 'test';
+            const otherRef = other === 'test' ? orderRef : orderRef.replace('FF-TEST-', 'FF-');
+            await orders.put(otherRef, JSON.stringify({ ...order, reference: otherRef, mode: other }));
+            link.merchantReference = otherRef;
+            assert.equal((await webhook({ request: event(), env: config })).status, 503);
+            assert.equal((await orders.get(otherRef, 'json')).status, 'pending');
+            assert.equal(await orders.get('event:event-1'), null);
+            assert.equal(await orders.get('paid:' + otherRef), null);
+            assert.equal(await readOrder(config, otherRef), null);
+            const response = await orderStatus({ request: new Request('https://preview.example.com/api/order-status?ref=' + otherRef), env: config });
+            assert.equal(response.status, 404);
+            // A record claiming the current mode under the opposite prefix also fails.
+            await orders.put(otherRef, JSON.stringify({ ...order, reference: otherRef }));
+            assert.equal(await readOrder(config, otherRef), null);
+            link.merchantReference = order.reference;
+            await orders.put(order.reference, JSON.stringify({ ...order, mode: other }));
+            assert.equal((await webhook({ request: event('mismatch'), env: config })).status, 503);
+            assert.equal(attempts.length, 0);
+        }, { STITCH_MODE: mode, STITCH_CLIENT_ID: mode === 'test' ? 'test-isolation' : 'live-isolation' });
+    });
+}
+test('live return page accepts live references and shows no test wording', async () => {
+    const reference = orderRef.replace('FF-TEST-', 'FF-');
+    const page = await statusPage([Response.json({ status: 'paid', total: 10000 }, { headers: { 'X-Order-Confirmation': 'sent' } })], '?ref=' + reference);
+    assert.equal(page.cleared(), 1);
+    assert.equal(page.calls[0], '/api/order-status?ref=' + reference);
+    assert.ok(!/test/i.test(page.elements['order-message'].textContent));
+    for (const path of ['checkout-success.html', 'checkout-cancelled.html']) assert.ok(!/test checkout/i.test(readFileSync(new URL('../' + path, import.meta.url), 'utf8')));
+    for (const mode of ['live', 'test']) {
+        const context = { window: { FASHFORGE: { checkoutEnabled: false } }, AbortSignal, fetch: async () => Response.json({ checkoutEnabled: true, checkoutMode: mode }) };
+        vm.runInNewContext(purchaseHelpers, context); await context.loadCheckoutFlag();
+        assert.equal(context.window.FASHFORGE.checkoutMode, mode);
+    }
+});

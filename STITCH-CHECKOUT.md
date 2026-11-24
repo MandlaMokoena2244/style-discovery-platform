@@ -1,235 +1,221 @@
-# Stitch Express test checkout and orders
+# Stitch Express checkout and orders
 
-This branch targets **dev**, never main. The temporary enable commit 0d04294 has
-been reverted: site-config.js defaults to checkoutEnabled:false. showOutfits stays
-false. Preview can enable checkout through the public server flag described below.
-All payment/order operations require STITCH_MODE=test and a test- client ID.
-No live payments or physical fulfilment are enabled. Confirmation emails are real
-emails labelled TEST; use addresses you control during preview testing.
+This change branches from dev into feature/stitch-live. It supports test and live
+payments selected only by server environment configuration. It does not change main,
+merge branches, configure production, or deploy. site-config.js still defaults to
+checkoutEnabled:false and showOutfits:false. PayFast is unchanged.
 
-## Cloudflare Pages Preview setup
+## Mode and configuration
 
-Project: **fashforge**. Keep the repository root as the static output directory.
-Pages discovers functions/api/*.js. Plain JSON imports support Wrangler 3.114.
-No runtime npm dependency or static build step is required.
+STITCH_MODE must be exactly test or live. Missing/unknown modes fail closed with a
+friendly 503. Client ID and secret must be nonempty strings. Test IDs must start
+with test-; live IDs must not. Secrets are opaque and have no prefix requirement.
+Both checkout and the public capability endpoint require CHECKOUT_ENABLED=true,
+a valid mode/client pair, an HTTPS STITCH_SITE_URL origin, an ORDERS KV binding,
+and a nonempty base64 STITCH_WEBHOOK_SECRET (optional whsec_ prefix).
+The URL cannot contain credentials, a path beyond /, a query, or a fragment.
+Live order operations also require all these services to be configured.
 
-Create a dedicated **test KV namespace**, for example fashforge-orders-preview.
-In the project's **Preview** environment, add a **KV namespace binding** named
-**ORDERS**, select that namespace, and redeploy. Do not bind production data.
-The namespace ID is not hardcoded in the repository. Missing ORDERS fails checkout
-before creating a payment link. ORDERS is a binding, not a .dev.vars string.
+GET /api/site-config returns only checkoutEnabled and checkoutMode (test/live,
+or null when disabled), with Cache-Control:no-store. The browser resolves it
+before initializing product buttons and the cart. A valid server response overrides
+the local flag. A failed request retains the local default false. The public mode
+only controls wording; no request-body or URL field can choose payment mode.
 
-Configure these variables in **Preview only**:
+CHECKOUT_ENABLED gates new checkout creation only. Keep credentials, webhook secret
+and ORDERS configured when pausing new sales: existing webhooks and status polling
+must still finish. Never switch the mode or KV binding to pause payments.
 
-| Variable | Value |
-| --- | --- |
-| CHECKOUT_ENABLED | true |
-| STITCH_MODE | test |
-| STITCH_CLIENT_ID | Express test client ID, starting with test- |
-| STITCH_CLIENT_SECRET | Encrypted opaque test client secret; no prefix required |
-| STITCH_WEBHOOK_SECRET | Encrypted base64 test signing secret; optional whsec_ prefix |
-| STITCH_SITE_URL | Exact HTTPS preview origin, without path/trailing slash |
-| ORDER_NOTIFY_EMAIL | Owner's address for full test order details |
-| ORDER_FROM_EMAIL | Sender address on a domain verified in Resend |
-| RESEND_API_KEY | Encrypted Resend sending API key |
+## Cloudflare Pages environments
 
-Leave production unchanged. Secrets never appear in browser JS or responses.
-Local secrets belong in ignored .dev.vars; .dev.vars.example contains placeholders.
+Project: fashforge. The repository root is the static output directory; Pages
+loads functions/api/*.js. No runtime npm packages or build step are required.
+JSON imports remain plain imports for Wrangler 3.114's native JSON bundling.
 
-## Product buttons and public checkout flag
+| Setting | Preview | Production |
+| --- | --- | --- |
+| CHECKOUT_ENABLED | true when testing | false while preparing; true for launch |
+| STITCH_MODE | test | live |
+| STITCH_CLIENT_ID | Express test- client ID | Express live ID, no test- prefix |
+| STITCH_CLIENT_SECRET | encrypted test secret | encrypted live secret |
+| STITCH_WEBHOOK_SECRET | test endpoint signing secret | live endpoint signing secret |
+| STITCH_SITE_URL | exact HTTPS preview origin | https://www.fashforge.co.za |
+| ORDERS KV binding | dedicated test namespace | fashforge-orders-live |
+| ORDER_NOTIFY_EMAIL | owner's test address | owner's operational address |
+| ORDER_FROM_EMAIL | Resend-verified sender | FashForge sender on verified domain |
+| RESEND_API_KEY | encrypted sending key | encrypted production sending key |
 
-GET /api/site-config returns only {checkoutEnabled:boolean} with Cache-Control:no-store.
-It returns true only when CHECKOUT_ENABLED=true, STITCH_MODE=test, a test-prefixed
-client ID and a nonempty secret are configured. No keys or other environment values
-are returned. /api/checkout still independently enforces its server-side guards.
+Create the namespaces in Cloudflare and select them as bindings named ORDERS in
+the appropriate Pages environment. Namespace IDs are not committed. ORDERS is not
+a string environment variable. Keep test and live namespaces and credentials
+separate. Browser JS never receives any key. .dev.vars.example contains placeholders;
+real local credentials belong only in ignored .dev.vars.
 
-The browser fetches this flag before rendering the catalogue and initializing the
-cart. A valid server boolean overrides site-config.js (including server false over
-a local true); missing/unreachable/invalid responses retain the local default false.
-This keeps Preview enabled after reverting the temporary flag without changing
-production. Set the variables in Preview only and redeploy after changes.
+## Express authentication and URLs
 
-All current product/outfit detail URLs use product.html and catalogue-ui.js; no
-standalone HTML product order button was found. When enabled, the primary button
-is Add to cart with selected size/quantity validation and visible added feedback.
-The existing cart count/drawer updates, and checkout posts only id/size/qty (not
-browser prices). Order on WhatsApp is a smaller secondary link. When disabled,
-WhatsApp is the main action, using the selected size/quantity and delivery choice.
-Outfits remain hidden; the shared outfit handler maps pieces to sellable catalogue
-product IDs instead of submitting unsupported outfit IDs. An unavailable/non-standalone
-piece blocks that outfit checkout with an explanation.
+Reviewed 24 November 2026 against the Express quick start and OpenAPI specification.
+The published server is https://express.stitch.money for Express REST; no separate
+live host is documented. Both modes use the same POST /api/v1/token JSON contract:
+clientId, clientSecret, scope=client_paymentrequest. data.accessToken is used as a
+Bearer token for subsequent requests. Credentials select the environment; the
+application does not send a mode field to Express. Token cache identity includes
+mode, client ID and secret. No Enterprise/Connect or GraphQL endpoints are used.
 
-## Stitch registration
+Use live credentials only after Stitch has enabled your account for live payments.
+Test completion alone does not establish live access. Confirm this in the Express
+dashboard or with Stitch support before launch. Never copy credentials into a PR.
 
-Use POST /api/v1/token with clientId, clientSecret and scope=client_paymentrequest.
-Keep data.accessToken server-side. Register the endpoint via POST /api/v1/webhook,
-JSON field url:
+Register the live webhook using POST /api/v1/webhook with JSON field url:
 
-    https://<actual-feature-preview-host>/api/stitch-webhook
+    https://www.fashforge.co.za/api/stitch-webhook
 
-Store returned data.secret as STITCH_WEBHOOK_SECRET. Preserve live webhook
-destinations. Payloads have no test/live flag: use a dedicated test endpoint/secret.
-The handler additionally re-fetches payment links using test client credentials.
+Save data.secret as Production STITCH_WEBHOOK_SECRET. The receiver accepts the
+base64 secret with or without whsec_. Register the preview URL separately using
+test credentials. Do not assume test events are isolated by endpoint registration;
+Express documents that payment events can be sent to all registered endpoints.
+Keep each deployment bound to its own mode and namespace. Do not replace an
+existing webhook destination without checking other integrations using it.
 
-Register this callback via POST /api/v1/redirect-urls, JSON field redirectUrl:
+Register the live return URL via POST /api/v1/redirect-urls, field redirectUrl:
 
-    https://<actual-feature-preview-host>/checkout-success.html
+    https://www.fashforge.co.za/checkout-success.html
 
-The link's redirect_url includes that callback with ?ref=<merchantReference>.
-Express strips the callback query when matching registered URLs and also appends
-reference/payment_id. The page accepts ref or the documented reference fallback;
-it never trusts a browser-supplied payment_id/status as proof of payment.
+The link returned by POST /api/v1/payment-links receives the documented redirect_url
+parameter, pointing to that URL with ?ref=<reference>. Register the preview callback
+separately. Express matches registered callback paths without the query and allows
+up to five registered redirect URLs. There is no separate cancel_url field here.
+checkout-cancelled.html is a friendly optional exit page, not proof of cancellation.
 
-## Storage and lifecycle
+## Order lifecycle and mode isolation
 
-POST /api/checkout validates customer/cart and prices from products.json, creates
-the test payment link, then awaits ORDERS.put(merchantReference). The redirect is
-returned only after storage succeeds. Failed writes return an error without
-exposing the payable link; an unused link may remain and expires in 30 minutes.
+Cart inputs are product ID, size and quantity; prices come from products.json.
+Catalogue prices are rand amounts, converted server-side to integer ZAR cents.
+Door delivery is R99, Courier Guy locker R70, free from R2,000. Delivery is included
+exactly once in the payment amount. Empty/invalid/sold-out carts and invalid SA
+customer/address details fail before payment creation.
 
-The record contains reference, mode:test, paymentLinkId, currency:ZAR, customer
-name/email/normalized mobile, street/suburb/city/province/postalCode/country:ZA,
-optional delivery note, deliveryMethod, items (id, catalogue name, size, qty,
-unitPrice), subtotal, deliveryFee, total, status:pending and createdAt.
-All stored/API monetary amounts are **integer ZAR cents**. Catalogue prices stay
-in rands. Delivery is R99 door/R70 locker, free from R2,000. The address is stored
-in KV, not sent as an undocumented Stitch field. Shipping is included once in
-amount with collectDeliveryDetails:false.
+References use crypto.randomUUID(): FF-TEST-<uuid> in test and FF-<uuid> in live.
+A pending KV record is written under that reference before exposing the payment
+link. It contains mode, customer name/email/normalized mobile/full SA address/note,
+delivery method, item ID/name/size/quantity/unit price, subtotal, delivery fee,
+total, currency, payment link ID, status and timestamps. Money is integer cents.
+If storage fails after link creation, an unused 30-minute link can exist upstream
+but is not returned to the customer.
 
-The documented webhook lacks merchantReference. For LINK events the handler calls
-GET /api/v1/payment-links/{linkId}, obtains the reference, and matches the stored
-link ID, amount, returned paymentId and PAID status to the signed event. Missing
-orders return 503 for retry, including KV propagation delays. Mismatches never
-mark paid or send email. Other documented Express product types are acknowledged
-without cart side effects.
+A verified payment.paid LINK webhook is reconciled with an authenticated
+GET /api/v1/payment-links/{linkId} using this deployment's credentials. The signed
+payload has no mode or merchantReference field. The looked-up reference must have
+the current mode's prefix; the stored reference and stored order mode must agree.
+The link ID, reference, payment ID and amounts must also match before any paid
+marker, order update or email. A foreign-mode reference returns no order, even if
+both namespaces were accidentally shared. A test event cannot choose live mode
+through a payload field (and vice versa). Invalid signatures are rejected.
 
-Express documents only payment.paid webhooks. Failed/cancelled events are not
-invented. Unpaid status checks query the link:
+Only payment.paid is documented. Status polling reads negative outcomes from the
+link: CANCELLED becomes cancelled, EXPIRED becomes failed, PENDING stays pending.
+A declined attempt on a still-pending link is not a terminal order failure. PAID
+is committed only after a verified webhook, never from the browser redirect.
+Unrelated CONSENT/SUBSCRIPTION/TERMINAL events are acknowledged without fulfilment.
 
-| Stitch link state | Order state |
-| --- | --- |
-| PENDING | pending |
-| PAID before its signed webhook is processed | pending |
-| CANCELLED | cancelled |
-| EXPIRED | failed |
-| Reconciled signed PAID webhook | paid |
+GET /api/order-status accepts either reference format but only returns orders for
+the deployment's configured mode. It exposes status and total only, with no-store.
+The non-personal X-Order-Confirmation header reports sent/skipped/pending. The
+return page accepts both reference patterns, polls eight times over about 106
+seconds, then offers manual checking. It clears the cart only once paid. It only
+claims confirmation was emailed when Resend accepted it; acceptance is not proof
+of inbox delivery. Return/cancellation copy is mode-neutral. The cart's test warning
+and Checkout (test) label appear only when the server reports test mode.
 
-A decline while the link remains PENDING is not a final failure. Paid markers
-take precedence over stale cancellation/expiry writes.
+## Email and deduplication
 
-## Deduplication and email
-
-Additional KV records:
-
-- paid:<reference>: paymentId/paidAt marker, preserving paid status
-- event:<svix-id>: completed delivery receipt
+notifyPaidOrder remains the only send path. KV keys remain:
+- paid:<reference>: monotonic payment marker
+- event:<svix-id>: completed event receipt
 - email:<reference>:owner and email:<reference>:customer: sent/skipped receipts
 
-A paid order triggers two Resend POST https://api.resend.com/emails requests with
-bearer auth: complete operational plain text to the owner (including catalogue SKU),
-and a branded HTML + plain-text customer confirmation. Stable per-order/per-recipient Idempotency-Key headers protect
-against concurrent deliveries while KV receipts are propagating.
+Live Resend Idempotency-Key values are order-paid/<reference>/<audience>;
+test values remain test-order-paid/<reference>/<audience>.
+A completed event receipt is written only after both recipient results are stored.
+Partial failure retries only unfinished sends. Missing RESEND_API_KEY or missing
+sender/owner address records a skip without failing the webhook. Other processing
+errors return non-2xx for retry. Pausing checkout does not pause these sends.
 
-The event receipt is saved only after both emails are sent or explicitly skipped.
-Email/API/KV failures return non-2xx so Stitch retries; completed recipient receipts
-prevent resending an owner email when only the customer email failed.
-Missing RESEND_API_KEY skips/logs email without failing the webhook. Missing
-sender/owner settings are also logged/skipped. Skipped messages are not backfilled
-automatically after settings change.
+The owner receives complete operational plain text, including delivery note and
+catalogue SKU. Test owner emails retain [TEST] and TEST ORDER — no fulfilment;
+live subjects are New paid order <reference> — R<total>, with no test warning.
+Customer emails use branded HTML tables and equivalent plain text, Reply-To
+hello@fashforge.co.za, Johannesburg dates and site-style rand formatting. Only test
+orders have a [TEST] subject and no-dispatch banner. Live orders have neither.
+Images use https://www.fashforge.co.za; the view-order URL uses STITCH_SITE_URL.
+Brand/image/SKU are enriched by product ID from bundled products.json; missing
+products fall back to stored names without blocking email. SKU and delivery note
+remain owner-only. Customer/catalogue HTML strings are escaped.
 
-KV is eventually consistent, with no atomic compare-and-set. Resend retains
-idempotency keys for 24 hours. Automatic sends stop 23 hours after provider paidAt
-(order creation is the fallback if absent), recording retry_window_expired for
-manual review rather than risking a duplicate outside that retention window.
-Do not change sender/recipient settings mid-retry: the body must remain identical
-for a reused idempotency key. A strict exactly-once fulfilment transaction requires
-a Durable Object or transactional database before any live rollout.
+KV is eventually consistent and cannot ensure an atomic exactly-once transaction.
+Resend deduplicates stable keys for 24 hours. Automatic sends stop 23 hours after
+provider paidAt (creation-time fallback); late ambiguous sends require manual
+review. Keep templates, catalogue enrichment, sender and site URL stable during
+pending retries so the body stays identical for a given key. Tests compare exact
+retry payloads. Do not replay an old ambiguous send with a new key.
 
-Records currently have no automatic expiry. Restrict access and clear the
-dedicated namespace when test data is no longer needed. Do not remove receipts
-while leaving orders available for replay.
+## Preview checks
 
-## Customer page and status API
+1. Configure test Preview variables and its dedicated ORDERS namespace; redeploy.
+2. Confirm /api/site-config returns enabled true and checkoutMode test. Choose a
+   product size/quantity; check cart count/feedback and the secondary WhatsApp link.
+3. Use test customer addresses you control. Confirm authoritative prices/delivery.
+4. Complete only the documented Express test-card flow. Confirm a pending record
+   becomes paid, one owner/customer email arrives, and the return page clears cart.
+5. Replay the webhook, test a partial email failure, and check that retries do not
+   duplicate completed sends. Missing Resend key should record skipped email.
+6. Verify cancellation, invalid signatures, mode/prefix mismatch and forged amount
+   cannot mark paid. Disable checkout and verify existing order processing remains.
 
-GET /api/order-status?ref=... returns only JSON {status,total}, Cache-Control:no-store,
-and no customer/address/items. References are random UUID capabilities; protect
-their URLs. The page uses no-referrer. A non-personal X-Order-Confirmation header
-reports sent/skipped/pending so the page only says "We've emailed your confirmation"
-after Resend accepts the customer email. Acceptance does not guarantee inbox delivery.
+## Manual production launch (not performed by this PR)
 
-The page polls up to eight times over about 106 seconds (plus request time), then
-offers a manual check. Pending keeps the cart, paid clears it, and failed/cancelled
-keeps it with a retry link. Visiting checkout-cancelled.html does not cancel a
-payment or clear the cart. Unpaid polls query Stitch; add Cloudflare rate limits
-before broader use.
+1. Review and merge through your normal release process separately. This task does
+   not merge into dev or main or change Cloudflare deployments.
+2. Confirm Stitch live access; create fashforge-orders-live and bind Production
+   ORDERS. Set Production variables with CHECKOUT_ENABLED=false initially. Keep
+   Preview test configuration separate and unchanged.
+3. Register the live webhook and return URL above with live credentials. Save the
+   returned signing secret directly into encrypted Production configuration.
+4. Configure Resend's verified sender, production sending key and owner mailbox.
+5. Manually deploy the reviewed release through the project's Production deployment
+   workflow when authorized. Production currently follows main; do not assume
+   merging this PR into dev publishes it. No main change is included in this task.
+6. Set CHECKOUT_ENABLED=true for Production and redeploy manually when ready.
+   Confirm /api/site-config reports live, the cart has no test warning, and the
+   correct domain/callback is used. Perform an owner-approved small real payment,
+   verify KV, signed webhook, both emails, and status page, and reconcile it in
+   Stitch. This PR does not perform a real charge or change environment settings.
+7. If pausing sales, set CHECKOUT_ENABLED=false and redeploy; preserve live mode,
+   credentials and storage so in-flight paid orders can still complete.
 
-## Preview test checklist
+## Validation and remaining operations
 
-1. Add ORDERS and the email variables, set CHECKOUT_ENABLED=true and STITCH_MODE=test
-   with valid test credentials in Preview, then redeploy. Check /api/site-config
-   returns only {"checkoutEnabled":true}; showOutfits remains false.
-2. Add a sized product and use an email/address you control. Inspect the pending
-   KV record before payment, including catalogue prices, sizes, address and notes.
-3. Complete an Express test payment. Check paid status, one owner email with all
-   details, one branded customer email, and the return page/cart update.
-4. Replay the signed event in Stitch. Confirm no additional email. Simulate a
-   transient Resend failure and confirm only unfinished sends retry.
-5. Remove RESEND_API_KEY for a new test order: the webhook should still return 200,
-   order stays paid, logs say skipped, and the page must not claim it sent email.
-6. Test cancellation/expiry, invalid signatures and amount mismatch. PENDING card
-   declines stay pending. Unknown references may return 404 during KV propagation.
-7. Check desktop/mobile, only status/total in JSON, and cart preservation until paid.
-8. Verify the repo default stays false and production has no enabling server flag.
-   No additional preview-flag revert is needed.
+Run Node 24: node --test test/stitch.test.mjs test/payfast.test.js.
+The test-only JSON loader mirrors Wrangler bundling; no import attributes are used.
+Tests mock Stitch, KV and Resend and cover both configuration modes, generated
+references, cross-mode rejection, live signed events, privacy, live/test emails,
+exact retry bodies, checkout gating and frontend mode behavior. They do not prove
+account live activation or real email delivery. The email mockup/screenshots were
+not supplied; real mail-client visual QA remains a launch check.
 
-Local checks (Node 24 for the test-only JSON loader):
+No automatic KV retention policy, inventory reservation, checkout-attempt
+idempotency, rate limits, locker lookup or operational retry dashboard exists.
+Plan these and reconciliation/late-email recovery before broader live rollout.
+KV propagation can delay the return page; failed email retries must be monitored.
 
-    node --test test/stitch.test.mjs test/payfast.test.js
-    node --check checkout-status.js
-    node --check script.js
-    npx wrangler@3.114.0 pages functions build --outdir ../cf-build
-
-The project owner confirmed the previous checkout end-to-end. New order/email
-tests use mocked KV, Stitch and Resend; the new Preview binding and real test
-delivery still need verification.
-
-## Official sources
+## Official references
 
 - https://express.stitch.money/api/openapi.json
 - https://express.stitch.money/api-docs/quickstart
 - https://express.stitch.money/api-docs/webhooks
 - https://express.stitch.money/api-docs/redirect-urls
+- https://support.express.stitch.money/hc/en-us/articles/52635905708305-Getting-started-with-the-Stitch-Express-API
+- https://support.express.stitch.money/hc/en-us/articles/52813974171153-Completing-a-test-card-payment-in-an-Express-API-integration
 - https://docs.svix.com/receiving/verifying-payloads/how-manual
 - https://resend.com/docs/api-reference/emails/send-email
 - https://resend.com/docs/dashboard/emails/idempotency-keys
 - https://developers.cloudflare.com/kv/concepts/how-kv-works/
-- https://developers.cloudflare.com/kv/api/write-key-value-pairs/
-
-Before any live rollout: transactional concurrency control, checkout-attempt
-idempotency, inventory reservation, retention policy, rate limits, locker lookup
-and operational handling of emails beyond the retry window remain necessary.
-
-## Branded customer confirmation
-
-`lib/order-email.mjs` builds the customer HTML and equivalent plain text from stored
-order values. Reply-To is hello@fashforge.co.za. Test orders have a [TEST] subject
-and a black/gold no-dispatch banner; payment guards remain test-only. The email
-uses table layout, inline styles, a mobile padding adjustment, escaped content,
-Johannesburg dates, and the site's rand formatting. No VAT line or tracking button
-is shown. Delivery notes remain owner-only.
-
-Brand, image and internal SKU are looked up by item ID in bundled products.json
-at send time. Stored names and prices remain authoritative; all-uppercase names
-are title-cased only for customer display. Missing catalogue entries omit brand
-and image without blocking delivery. Images use https://www.fashforge.co.za;
-the view-order button uses STITCH_SITE_URL. SKU is included only for the owner.
-
-notifyPaidOrder remains the only send path. Receipt keys, skip conditions,
-idempotency keys and retry window are unchanged. Builders use no current time
-or random values. Keep catalogue, sender, site URL and template deployment stable
-during pending retries so Resend receives identical bodies for the same key.
-The existing partial-failure test checks exact body equality.
-
-The supplied brief contains design tokens but no actual mockup/screenshots were
-available for comparison. Verify desktop/mobile rendering in real mail clients
-and a fresh test-order delivery after deployment.

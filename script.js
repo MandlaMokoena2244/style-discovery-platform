@@ -295,6 +295,7 @@ async function loadCheckoutFlag() {
         const config = await response.json();
         if (typeof config.checkoutEnabled === 'boolean' && window.FASHFORGE) {
             window.FASHFORGE.checkoutEnabled = config.checkoutEnabled;
+            window.FASHFORGE.checkoutMode = ['test', 'live'].includes(config.checkoutMode) ? config.checkoutMode : null;
         }
     } catch { /* Static hosting/network failure keeps the local default (false). */ }
 }
@@ -528,7 +529,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         return `
             <form id="checkout-form" class="checkout-form" novalidate>
                 <h4>Delivery details</h4>
-                ${stitchOn ? '<p>Test checkout only. No orders will be fulfilled. Use test details.</p><div class="form-group"><label for="checkout-delivery">Delivery in South Africa</label><select id="checkout-delivery"><option value="door">Door-to-door</option><option value="locker">Courier Guy locker</option></select></div><p>For locker delivery, enter the locker address below.</p>' : ''}
+                ${stitchOn ? (window.FASHFORGE.checkoutMode === 'test' ? '<p>Test checkout only. No orders will be fulfilled. Use test details.</p>' : '') + '<div class="form-group"><label for="checkout-delivery">Delivery in South Africa</label><select id="checkout-delivery"><option value="door">Door-to-door</option><option value="locker">Courier Guy locker</option></select></div><p>For locker delivery, enter the locker address below.</p>' : ''}
                 <div class="form-group">
                     <label for="checkout-name">Full name</label>
                     <input id="checkout-name" name="name" type="text" autocomplete="name" maxlength="100" required>
@@ -590,7 +591,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <p class="checkout-error" id="checkout-error" role="alert" hidden></p>
                 ${ordersDisabled
                     ? '<p class="orders-paused" role="status">' + ORDERS_PAUSED_NOTICE + '</p><button class="btn-checkout is-paused" id="checkout-btn" type="button" disabled>Checkout coming soon</button>'
-                    : '<button class="btn-checkout" id="checkout-btn" type="' + (checkoutOn ? 'submit' : 'button') + '"' + (checkoutOn ? ' form="checkout-form"' : '') + '>' + (stitchOn ? 'Checkout (test)' : payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
+                    : '<button class="btn-checkout" id="checkout-btn" type="' + (checkoutOn ? 'submit' : 'button') + '"' + (checkoutOn ? ' form="checkout-form"' : '') + '>' + (stitchOn ? (window.FASHFORGE.checkoutMode === 'test' ? 'Checkout (test)' : 'Checkout') : payfastOn ? 'Pay by card' : 'Order on WhatsApp') + '</button>'}
                 <p class="cart-policy-links"><a href="terms-and-conditions.html">Terms</a><a href="refunds-and-cancellations.html">Refunds</a><a href="delivery-policy.html">Delivery</a></p>
             </div>
         </aside>
@@ -933,7 +934,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         customer.country = 'ZA';
         stitchSubmitting = true;
         checkoutBtn.disabled = true;
-        checkoutBtn.textContent = 'Opening Stitch test checkout…';
+        checkoutBtn.textContent = 'Opening secure checkout…';
         showCheckoutError('');
         try {
             const response = await fetch('/api/checkout', {
@@ -944,17 +945,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 })
             });
             const data = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(data.error || 'Test checkout could not be started.');
+            if (!response.ok) throw new Error(data.error || 'Checkout could not be started.');
             const target = new URL(data.redirectUrl);
             if (target.origin !== 'https://express.stitch.money' || target.username || target.password) throw new Error('Invalid checkout link.');
             const subtotal = cart.reduce((sum, item) => sum + Number(item.price) * item.qty, 0);
             if (data.amount !== Math.round((subtotal + stitchDeliveryFee(subtotal)) * 100)) throw new Error('Prices have changed. Refresh and add your items again before checking out.');
             window.location.assign(target.href);
         } catch (error) {
-            showCheckoutError(error.message || 'Test checkout could not be started.');
+            showCheckoutError(error.message || 'Checkout could not be started.');
             stitchSubmitting = false;
             checkoutBtn.disabled = false;
-            checkoutBtn.textContent = 'Checkout (test)';
+            checkoutBtn.textContent = window.FASHFORGE.checkoutMode === 'test' ? 'Checkout (test)' : 'Checkout';
         }
     }
 

@@ -26,7 +26,7 @@ export async function verifyWebhook(bytes, headers, secret, now = Date.now()) {
 }
 export async function onRequest({ request, env }) {
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: { Allow: 'POST' } });
-    if (env.STITCH_MODE !== 'test' || !env.STITCH_WEBHOOK_SECRET) return json({ error: 'Test webhook not configured.' }, 503);
+    if (!['test', 'live'].includes(env.STITCH_MODE) || !env.STITCH_WEBHOOK_SECRET) return json({ error: 'Webhook is not configured.' }, 503);
     let payload;
     try {
         const bytes = await readBody(request, 65536);

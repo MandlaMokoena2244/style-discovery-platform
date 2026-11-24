@@ -128,3 +128,34 @@ Still to confirm before the pay button: a short line that delivery is by courier
 ### Checks
 
 `node --test` runs the signature test and the checkout and notification checks. No PayFast call is made.
+
+## Release asset caching
+
+run `node scripts/bump-asset-version.mjs` before every release
+
+Commit the rewritten HTML with the release. The script uses one shared
+YYYYMMDDHHmm version in Africa/Johannesburg time for every local stylesheet and
+script URL, including site-config, catalogue scripts and checkout-status. It
+updates existing v parameters, preserves other query parameters/fragments, and
+leaves external URLs, inline scripts and images unchanged. It can be run from
+any working directory; reruns within a minute are idempotent.
+
+Cloudflare Pages publishes this static site from the repository root (the folder
+containing index.html), with no separate build output. Keep _headers in that root
+and include it in the uploaded/published files. There is no existing _redirects
+or competing _headers file. If a build output directory is introduced later,
+copy _headers there alongside index.html. This PR does not inspect or change the
+Cloudflare dashboard; verify the existing Pages output directory remains the root.
+
+_headers revalidates HTML and extension-less pages with no-cache, gives CSS/JS
+public, max-age=0, must-revalidate, and caches images for one week. Narrow rules
+detach the broad Cache-Control before replacing it so overlapping patterns do
+not combine conflicting directives. Pages does not apply _headers to Functions;
+/api/site-config and the other APIs retain their own no-store responses.
+See [Cloudflare Pages headers](https://developers.cloudflare.com/pages/configuration/headers/).
+
+After an authorized release, check response headers for /, /product, a .html
+page, versioned CSS/JS, an image, and /api/site-config. Existing already-fresh
+browser caches cannot be retroactively invalidated: the new policy takes effect
+when browsers next receive a response. Keep unchanged image filenames; use a new
+filename when an image changes and needs immediate refresh during its one-week TTL.

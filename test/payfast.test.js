@@ -416,8 +416,8 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     const providerEnd = script.indexOf('const PIECE_STOCK');
     const provider = Function(script.slice(providerStart, providerEnd) + '\nreturn activePaymentProvider();')();
     assert.equal(provider, 'disabled');
-    assert.match(script, /We're not taking payments yet\. Online checkout is coming soon — you can save items in your cart and check back shortly\./);
-    assert.match(script, /Order on WhatsApp/);
+    assert.match(script, /Checkout temporarily unavailable/);
+    assert.doesNotMatch(script, /Order on WhatsApp/);
     assert.match(script, /Pay by card/);
     assert.match(script, /Free delivery on orders of R2,000 or more\./);
     const siteConfig = fs.readFileSync(path.join(ROOT, 'site-config.js'), 'utf8');
@@ -428,7 +428,7 @@ test('the payment switch pauses orders, and result pages stay out of the sitemap
     assert.match(siteConfig, /packDays: \[1, 2\]/);
     assert.match(siteConfig, /courierDays: \[1, 3\]/);
     assert.equal(fs.readFileSync(path.join(ROOT, 'delivery-policy.html'), 'utf8').includes('TODO(Mandla): confirm a typical delivery window'), false);
-    assert.equal(script.includes('https://wa.me/27672565980?text='), true);
+    assert.equal(script.includes('https://wa.me/27672565980?text='), false);
     for (const file of fs.readdirSync(ROOT)) {
         if (!file.endsWith('.html')) continue;
         const html = fs.readFileSync(path.join(ROOT, file), 'utf8');
